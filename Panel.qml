@@ -17,14 +17,22 @@ Panel {
 
   property var capy: Model.defaultState(Date.now())
   property real loadAvg: 0
-  property bool stateReady: false
   property bool hydrateDone: false
-  property int blink: 0
+  property int frame: 0
   property int cursorIndex: 0
   property bool cursorActive: false
+  property bool actionPop: false
+  property real heroScale: 1
+  property real heroSpin: 0
+  property real barNudge: 0
+  property real toastOpacity: 0
+  property string toastText: ""
+  property var particles: []
+  property int particleSeq: 0
 
   readonly property var meta: Model.moodMeta(capy.mood)
   readonly property var meters: Model.meters(capy)
+  readonly property int animTempo: Model.barTempoMs(capy)
   readonly property var actions: [
     { id: "pet", label: "Pet", detail: "soft diplomacy", icon: "✋" },
     { id: "orange", label: "Orange", detail: "citrus treaty", icon: "🍊" },
@@ -51,6 +59,39 @@ Panel {
     if (hydrateDone) persist()
   }
 
+  function showToast(text) {
+    toastText = text || ""
+    toastOpacity = toastText !== "" ? 1 : 0
+    if (toastText !== "")
+      toastFade.restart()
+  }
+
+  function spawnParticles(actionId) {
+    var fx = Model.actionFx(actionId)
+    var next = []
+    for (var i = 0; i < fx.length; i++) {
+      particleSeq += 1
+      next.push({
+        id: particleSeq,
+        text: fx[i],
+        x: 40 + (i * 70) + ((particleSeq + i) % 3) * 12,
+        delay: i * 70,
+      })
+    }
+    particles = next
+    particleClear.restart()
+  }
+
+  function playActionMotion(actionId) {
+    actionPop = true
+    heroScale = actionId === "soak" ? 1.18 : 1.28
+    heroSpin = actionId === "wisdom" ? 12 : (actionId === "orange" ? -8 : 0)
+    barNudge = actionId === "pet" ? -4 : 3
+    popBack.restart()
+    nudgeBack.restart()
+    spawnParticles(actionId)
+  }
+
   function doAction(id) {
     var ts = Date.now()
     if (id === "pet") capy = Model.pet(capy, loadAvg, ts)
@@ -59,8 +100,8 @@ Panel {
     else if (id === "wisdom") capy = Model.wisdom(capy, loadAvg, ts)
     else return
     persist()
-    blink = 1
-    blinkTimer.restart()
+    showToast(capy.toast || "")
+    playActionMotion(id)
   }
 
   function selectByDelta(delta) {
@@ -79,6 +120,8 @@ Panel {
       runTick()
       cursorActive = false
       cursorIndex = 0
+      heroScale = 1
+      heroSpin = 0
     }
   }
 
@@ -125,6 +168,7 @@ Panel {
     }
   }
 
+  // world tick
   Timer {
     interval: 15000
     running: true
@@ -135,33 +179,83 @@ Panel {
     }
   }
 
+  // sprite frame cycle — tempo depends on mood
   Timer {
-    id: blinkTimer
-    interval: 650
-    running: false
-    repeat: false
-    onTriggered: root.blink = 0
+    interval: Math.max(180, root.animTempo)
+    running: true
+    repeat: true
+    onTriggered: root.frame = (root.frame + 1) % 8
   }
 
-  // gentle face pulse while lounge open
+  // idle bob on the bar badge
   Timer {
-    interval: 900
-    running: root.opened
+    interval: 40
+    running: true
     repeat: true
-    onTriggered: root.blink = root.blink === 1 ? 0 : 1
+    onTriggered: {
+      // gentle sine via frame clock when no action nudge is active
+      if (nudgeBack.running) return
+      var t = Date.now() / (root.capy.mood === "napping" ? 900 : 420)
+      var amp = root.capy.mood === "hyped" ? 2.4 : (root.capy.mood === "fried" ? 1.8 : 1.2)
+      root.barNudge = Math.sin(t) * amp
+    }
   }
+
+  Timer {
+    id: popBack
+    interval: 220
+    running: false
+    repeat: false
+    onTriggered: {
+      root.heroScale = 1
+      root.heroSpin = 0
+      root.actionPop = false
+    }
+  }
+
+  Timer {
+    id: nudgeBack
+    interval: 180
+    running: false
+    repeat: false
+    onTriggered: root.barNudge = 0
+  }
+
+  Timer {
+    id: toastFade
+    interval: 2200
+    running: false
+    repeat: false
+    onTriggered: root.toastOpacity = 0
+  }
+
+  Timer {
+    id: particleClear
+    interval: 900
+    running: false
+    repeat: false
+    onTriggered: root.particles = []
+  }
+
+  Behavior on heroScale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
+  Behavior on heroSpin { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+  Behavior on barNudge { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+  Behavior on toastOpacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
   WidgetButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.meta.bar
-    active: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.capy.mood === "hyped"
-    useActiveColor: root.capy.mood === "lonely" || root.capy.mood === "fried"
-    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(34)
-    fixedHeight: root.bar && root.bar.vertical ? Style.space(28) : -1
+    text: Model.barLabel(root.capy, root.frame)
+    active: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.capy.mood === "hyped" || root.actionPop
+    useActiveColor: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.actionPop
+    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(36)
+    fixedHeight: root.bar && root.bar.vertical ? Style.space(30) : -1
     horizontalMargin: 6
     tooltipText: Model.tooltip(root.capy, root.loadAvg)
+    // subtle opacity pulse tied to bob clock
+    opacity: 0.88 + Math.min(0.12, Math.abs(root.barNudge) * 0.03)
+    Behavior on opacity { NumberAnimation { duration: 80 } }
     onPressed: function(b) {
       if (b === Qt.MiddleButton) {
         root.doAction("pet")
@@ -211,49 +305,90 @@ Panel {
         anchors.top: parent.top
         spacing: Style.space(14)
 
-        // Hero
-        Column {
+        // Hero stage
+        Item {
           width: parent.width
-          spacing: Style.space(6)
+          height: heroBlock.implicitHeight + Style.space(18)
 
-          Text {
-            width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            text: root.blink ? root.meta.face : root.meta.face
-            font.pixelSize: Style.font.title * 2.2
-            opacity: root.blink ? 0.84 : 1
-            Behavior on opacity { NumberAnimation { duration: 180 } }
+          // floating reaction particles
+          Repeater {
+            model: root.particles
+            delegate: Text {
+              required property var modelData
+              text: modelData.text
+              font.pixelSize: Style.font.title
+              opacity: 0
+              x: modelData.x
+              y: 70
+
+              SequentialAnimation on opacity {
+                running: true
+                PauseAnimation { duration: modelData.delay }
+                NumberAnimation { from: 0; to: 1; duration: 90 }
+                NumberAnimation { from: 1; to: 0; duration: 650; easing.type: Easing.InQuad }
+              }
+              SequentialAnimation on y {
+                running: true
+                PauseAnimation { duration: modelData.delay }
+                NumberAnimation { from: 70; to: 4; duration: 780; easing.type: Easing.OutCubic }
+              }
+            }
           }
 
-          Text {
+          Column {
+            id: heroBlock
             width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            text: "OmaCapy"
-            color: root.bar.foreground
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.title
-            font.bold: true
-          }
+            spacing: Style.space(6)
 
-          Text {
-            width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            text: root.meta.title
-            color: root.bar ? root.bar.urgent : Color.urgent
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.body
-            font.bold: true
-          }
+            Text {
+              id: heroFace
+              width: parent.width
+              horizontalAlignment: Text.AlignHCenter
+              text: Model.heroFace(root.capy, root.frame, root.actionPop)
+              font.pixelSize: Style.font.title * 2.35
+              scale: root.heroScale
+              rotation: root.heroSpin
+              transformOrigin: Item.Center
+              opacity: root.capy.mood === "napping" ? 0.82 : 1
 
-          Text {
-            width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            text: root.meta.blurb
-            color: root.bar.foreground
-            opacity: 0.75
-            wrapMode: Text.WordWrap
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.bodySmall
+              SequentialAnimation on opacity {
+                running: root.opened && root.capy.mood === "napping"
+                loops: Animation.Infinite
+                NumberAnimation { from: 0.55; to: 1.0; duration: 1400; easing.type: Easing.InOutSine }
+                NumberAnimation { from: 1.0; to: 0.55; duration: 1400; easing.type: Easing.InOutSine }
+              }
+            }
+
+            Text {
+              width: parent.width
+              horizontalAlignment: Text.AlignHCenter
+              text: "OmaCapy"
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.title
+              font.bold: true
+            }
+
+            Text {
+              width: parent.width
+              horizontalAlignment: Text.AlignHCenter
+              text: root.meta.title
+              color: root.bar ? root.bar.urgent : Color.urgent
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.body
+              font.bold: true
+            }
+
+            Text {
+              width: parent.width
+              horizontalAlignment: Text.AlignHCenter
+              text: root.meta.blurb
+              color: root.bar.foreground
+              opacity: 0.75
+              wrapMode: Text.WordWrap
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
           }
         }
 
@@ -301,7 +436,9 @@ Panel {
                   height: parent.height
                   radius: parent.radius
                   color: Color.accent
-                  Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                  Behavior on width {
+                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                  }
                 }
               }
             }
@@ -331,6 +468,9 @@ Panel {
               borderSpec: (root.cursorActive && root.cursorIndex === index)
                 ? Border.controlSpec("focus", root.bar.foreground, Color.accent)
                 : Border.none()
+              scale: actionMouse.pressed ? 0.98 : 1
+              Behavior on scale { NumberAnimation { duration: 90 } }
+              Behavior on color { ColorAnimation { duration: 120 } }
 
               Row {
                 id: actionRow
@@ -345,6 +485,8 @@ Panel {
                   text: modelData.icon
                   font.pixelSize: Style.font.title
                   anchors.verticalCenter: parent.verticalCenter
+                  scale: actionMouse.containsMouse ? 1.12 : 1
+                  Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
                 }
 
                 Column {
@@ -382,7 +524,7 @@ Panel {
           }
         }
 
-        // Wisdom / toast / stats
+        // Lore card
         BorderSurface {
           width: parent.width
           implicitHeight: loreCol.implicitHeight + Style.space(18)
@@ -401,8 +543,9 @@ Panel {
 
             Text {
               width: parent.width
-              visible: root.capy.toast !== ""
-              text: root.capy.toast
+              visible: root.toastText !== ""
+              opacity: root.toastOpacity
+              text: root.toastText
               color: Color.accent
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.bodySmall
@@ -414,7 +557,7 @@ Panel {
               width: parent.width
               text: root.capy.lastWisdom !== ""
                 ? root.capy.lastWisdom
-                : "Right-click the bar badge for instant wisdom. Middle-click to pet without opening."
+                : "Right-click badge = wisdom · middle-click = pet · scroll = pet/orange"
               color: root.bar.foreground
               opacity: 0.86
               wrapMode: Text.WordWrap

@@ -244,20 +244,110 @@ function wisdom(state, load, ts) {
 
 function moodMeta(mood) {
   var table = {
-    chill: { face: "🦫", title: "chill", blurb: "Floating through the desktop like it pays rent in vibes.", bar: "🦫" },
-    soaked: { face: "🫧🦫", title: "soaked", blurb: "Fresh from the spa. Problems bounce off wet fur.", bar: "🫧🦫" },
-    munching: { face: "🍊🦫", title: "munching", blurb: "Orange protocol engaged. Do not disturb the crunch.", bar: "🍊" },
-    napping: { face: "😴🦫", title: "napping", blurb: "After-hours mode. Dreaming of warmer APIs.", bar: "😴" },
-    hyped: { face: "✨🦫", title: "hyped", blurb: "Over-petted into enlightenment. Peak coworker.", bar: "✨🦫" },
-    fried: { face: "🥵🦫", title: "fried", blurb: "CPU heat detected. This capy needs a river and a nap.", bar: "🥵" },
-    lonely: { face: "🥺🦫", title: "lonely", blurb: "Has been emotionally buffering. Pets preferred.", bar: "🥺" },
-    meh: { face: "😑🦫", title: "meh", blurb: "Not mad. Just horizontally unimpressed.", bar: "🦫" },
+    chill: {
+      face: "🦫",
+      title: "chill",
+      blurb: "Floating through the desktop like it pays rent in vibes.",
+      bar: "🦫",
+      frames: ["🦫", "🦫˳", "˳🦫", "🦫"],
+      tempo: 1.0,
+    },
+    soaked: {
+      face: "🫧🦫",
+      title: "soaked",
+      blurb: "Fresh from the spa. Problems bounce off wet fur.",
+      bar: "🫧🦫",
+      frames: ["🫧🦫", "🦫🫧", "💧🦫", "🫧🦫"],
+      tempo: 0.85,
+    },
+    munching: {
+      face: "🍊🦫",
+      title: "munching",
+      blurb: "Orange protocol engaged. Do not disturb the crunch.",
+      bar: "🍊",
+      frames: ["🍊", "🦫", "🍊🦫", "🦫"],
+      tempo: 0.7,
+    },
+    napping: {
+      face: "😴🦫",
+      title: "napping",
+      blurb: "After-hours mode. Dreaming of warmer APIs.",
+      bar: "😴",
+      frames: ["😴", "💤", "😴🦫", "💤"],
+      tempo: 1.6,
+    },
+    hyped: {
+      face: "✨🦫",
+      title: "hyped",
+      blurb: "Over-petted into enlightenment. Peak coworker.",
+      bar: "✨🦫",
+      frames: ["✨🦫", "🎉🦫", "🦫✨", "⚡🦫"],
+      tempo: 0.45,
+    },
+    fried: {
+      face: "🥵🦫",
+      title: "fried",
+      blurb: "CPU heat detected. This capy needs a river and a nap.",
+      bar: "🥵",
+      frames: ["🥵", "🔥", "🥵🦫", "💨"],
+      tempo: 0.55,
+    },
+    lonely: {
+      face: "🥺🦫",
+      title: "lonely",
+      blurb: "Has been emotionally buffering. Pets preferred.",
+      bar: "🥺",
+      frames: ["🥺", "🦫", "🥺🦫", "…🦫"],
+      tempo: 1.25,
+    },
+    meh: {
+      face: "😑🦫",
+      title: "meh",
+      blurb: "Not mad. Just horizontally unimpressed.",
+      bar: "🦫",
+      frames: ["😑", "🦫", "😑🦫", "🦫"],
+      tempo: 1.35,
+    },
   }
   return table[mood] || table.chill
 }
 
-function barLabel(state) {
-  return moodMeta(state && state.mood).bar
+function frameAt(frames, index) {
+  var list = Array.isArray(frames) && frames.length ? frames : ["🦫"]
+  var i = Math.abs(Math.floor(Number(index) || 0)) % list.length
+  return list[i]
+}
+
+function barLabel(state, frame) {
+  var meta = moodMeta(state && state.mood)
+  if (frame == null) return meta.bar
+  return frameAt(meta.frames, frame)
+}
+
+function heroFace(state, frame, popped) {
+  var meta = moodMeta(state && state.mood)
+  if (popped) {
+    if (state && state.mood === "munching") return "🍊✨"
+    if (state && state.mood === "soaked") return "💧🦫💧"
+    if (state && state.mood === "hyped") return "🎉🦫🎉"
+    return meta.face + "✨"
+  }
+  return frameAt(meta.frames, frame)
+}
+
+function actionFx(actionId) {
+  if (actionId === "pet") return ["💕", "✨", "🫶", "💫"]
+  if (actionId === "orange") return ["🍊", "✨", "🟡", "😋"]
+  if (actionId === "soak") return ["💧", "🫧", "🌊", "💦"]
+  if (actionId === "wisdom") return ["💬", "⭐", "🧠", "✨"]
+  return ["✨"]
+}
+
+function barTempoMs(state) {
+  var meta = moodMeta(state && state.mood)
+  var tempo = Number(meta.tempo)
+  if (!isFinite(tempo) || tempo <= 0) tempo = 1
+  return Math.round(520 * tempo)
 }
 
 function tooltip(state, load) {
@@ -294,7 +384,11 @@ if (typeof module !== "undefined") {
     soak: soak,
     wisdom: wisdom,
     moodMeta: moodMeta,
+    frameAt: frameAt,
     barLabel: barLabel,
+    heroFace: heroFace,
+    actionFx: actionFx,
+    barTempoMs: barTempoMs,
     tooltip: tooltip,
     meters: meters,
     WISDOM: WISDOM,
