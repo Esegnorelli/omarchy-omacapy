@@ -9,8 +9,9 @@ Because computers should be useful **and** a little ridiculous.
 
 ## Features
 
-- Bar badge that changes with mood (`chill`, `soaked`, `munching`, `napping`, `hyped`, `fried`, `lonely`, `meh`)
-- Lounge panel with meters: mood fuel, snack, zen
+- **Animated** bar badge: mood frame cycle + soft pulse (faster when hyped/fried, slower when napping)
+- Lounge panel with bounce/spin on actions and floating emoji particles
+- Moods: `chill`, `soaked`, `munching`, `napping`, `hyped`, `fried`, `lonely`, `meh`
 - Actions: **Pet**, **Orange**, **Soak**, **Wisdom**
 - Slow natural decay + night nap regen + CPU-stress vibes from `/proc/loadavg`
 - State saved under `~/.local/state/omarchy/omacapy.json`
