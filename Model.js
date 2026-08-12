@@ -219,8 +219,10 @@ var WISDOM = [
 
 function pick(list, salt) {
   if (!list || !list.length) return ""
-  var i = Math.abs(Number(salt) || 0) + Math.floor(nowMs() / 1000)
-  return list[i % list.length]
+  var i = Math.floor(Math.abs(Number(salt) || 0) + Math.floor(nowMs() / 1000))
+  var idx = i % list.length
+  if (idx < 0) idx += list.length
+  return list[idx]
 }
 
 function wisdom(state, load, ts) {
