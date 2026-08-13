@@ -22,12 +22,19 @@ Panel {
   property bool cursorActive: false
   property bool actionPop: false
   property real heroScale: 1
+  property real heroSpin: 0
   property real toastOpacity: 0
   property string toastText: ""
+  property string shownWisdom: ""
+  property real wisdomOpacity: 0
   property var particles: []
   property int particleSeq: 0
   property real loungeOpacity: 0
-  property real loungeSlide: 8
+  property real loungeSlide: 10
+  property real heroIn: 0
+  property real statsIn: 0
+  property real restIn: 0
+  property real badgePulse: 1
 
   readonly property var meta: Model.moodMeta(capy.mood)
   readonly property var meters: Model.meters(capy)
@@ -108,12 +115,15 @@ Panel {
   function spawnParticles(actionId) {
     var tint = burstColor(actionId)
     var next = []
-    for (var i = 0; i < 5; i++) {
+    var i
+    for (i = 0; i < 14; i++) {
       particleSeq += 1
       next.push({
         id: particleSeq,
-        x: 28 + i * 22 + ((particleSeq + i) % 3) * 6,
-        delay: i * 45,
+        x: 12 + (i % 7) * 16 + ((particleSeq + i) % 4) * 5,
+        delay: i * 22,
+        size: 4 + (i % 4) * 2,
+        drift: (i % 2 === 0 ? -18 : 20) + (i % 5) * 3,
         tint: tint,
       })
     }
@@ -123,9 +133,30 @@ Panel {
 
   function playActionMotion(actionId) {
     actionPop = true
-    heroScale = actionId === "soak" ? 1.08 : 1.10
+    if (actionId === "pet") {
+      heroScale = 1.22
+      heroSpin = -6
+    } else if (actionId === "orange") {
+      heroScale = 1.16
+      heroSpin = -16
+    } else if (actionId === "soak") {
+      heroScale = 0.86
+      heroSpin = 4
+      soakPop.restart()
+    } else if (actionId === "wisdom") {
+      heroScale = 1.18
+      heroSpin = 18
+    } else {
+      heroScale = 1.12
+      heroSpin = 0
+    }
     popBack.restart()
     spawnParticles(actionId)
+  }
+
+  function flashWisdom(line) {
+    shownWisdom = line || ""
+    wisdomOpacity = shownWisdom !== "" ? 1 : 0
   }
 
   function doAction(id) {
@@ -137,6 +168,7 @@ Panel {
     else return
     persist()
     showToast(capy.toast || "")
+    flashWisdom(capy.lastWisdom || "")
     playActionMotion(id)
   }
 
@@ -157,8 +189,13 @@ Panel {
       cursorActive = false
       cursorIndex = 0
       heroScale = 1
+      heroSpin = 0
+      heroIn = 0
+      statsIn = 0
+      restIn = 0
       loungeOpacity = 0
-      loungeSlide = 8
+      loungeSlide = 12
+      flashWisdom(capy.lastWisdom || "")
       openAnim.restart()
     } else {
       loungeOpacity = 0
@@ -225,12 +262,24 @@ Panel {
 
   Timer {
     id: popBack
-    interval: 220
+    interval: 340
     running: false
     repeat: false
     onTriggered: {
       root.heroScale = 1
+      root.heroSpin = 0
       root.actionPop = false
+    }
+  }
+
+  Timer {
+    id: soakPop
+    interval: 140
+    running: false
+    repeat: false
+    onTriggered: {
+      root.heroScale = 1.20
+      root.heroSpin = -8
     }
   }
 
@@ -244,7 +293,7 @@ Panel {
 
   Timer {
     id: particleClear
-    interval: 780
+    interval: 980
     running: false
     repeat: false
     onTriggered: root.particles = []
@@ -253,13 +302,25 @@ Panel {
   SequentialAnimation {
     id: openAnim
     ParallelAnimation {
-      NumberAnimation { target: root; property: "loungeOpacity"; to: 1; duration: 220; easing.type: Easing.OutCubic }
-      NumberAnimation { target: root; property: "loungeSlide"; to: 0; duration: 240; easing.type: Easing.OutCubic }
+      NumberAnimation { target: root; property: "loungeOpacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
+      NumberAnimation { target: root; property: "loungeSlide"; to: 0; duration: 300; easing.type: Easing.OutBack }
     }
+    NumberAnimation { target: root; property: "heroIn"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+    NumberAnimation { target: root; property: "statsIn"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+    NumberAnimation { target: root; property: "restIn"; to: 1; duration: 200; easing.type: Easing.OutCubic }
   }
 
-  Behavior on heroScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+  SequentialAnimation {
+    running: true
+    loops: Animation.Infinite
+    NumberAnimation { target: root; property: "badgePulse"; to: 1.08; duration: 700; easing.type: Easing.InOutSine }
+    NumberAnimation { target: root; property: "badgePulse"; to: 1.0; duration: 700; easing.type: Easing.InOutSine }
+  }
+
+  Behavior on heroScale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+  Behavior on heroSpin { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
   Behavior on toastOpacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+  Behavior on wisdomOpacity { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
 
   WidgetButton {
     id: button
@@ -292,6 +353,8 @@ Panel {
     Row {
       anchors.centerIn: parent
       spacing: Style.space(5)
+      scale: root.badgePulse
+      transformOrigin: Item.Center
       CapyFace {
         faceSize: Style.space(16)
         mood: root.capy.mood
@@ -306,6 +369,7 @@ Panel {
         font.pixelSize: Style.font.bodySmall
         font.bold: true
         anchors.verticalCenter: parent.verticalCenter
+        opacity: 0.78 + (root.badgePulse - 1) * 2
       }
     }
   }
@@ -348,14 +412,46 @@ Panel {
         Item {
           width: parent.width
           height: Math.max(heroFace.height, heroCopy.height)
+          opacity: root.heroIn
+          scale: 0.92 + root.heroIn * 0.08
+          transformOrigin: Item.Left
+
+          Repeater {
+            model: root.opened ? 6 : 0
+            delegate: Rectangle {
+              required property int index
+              width: 3
+              height: 3
+              radius: 1.5
+              color: Color.accent
+              opacity: 0
+              x: 20 + index * 52
+              y: 8
+
+              SequentialAnimation on y {
+                running: root.opened
+                loops: Animation.Infinite
+                PauseAnimation { duration: index * 180 }
+                NumberAnimation { from: 18; to: 2; duration: 1400; easing.type: Easing.InOutSine }
+                NumberAnimation { from: 2; to: 18; duration: 1400; easing.type: Easing.InOutSine }
+              }
+              SequentialAnimation on opacity {
+                running: root.opened
+                loops: Animation.Infinite
+                PauseAnimation { duration: index * 180 }
+                NumberAnimation { from: 0; to: 0.45; duration: 700 }
+                NumberAnimation { from: 0.45; to: 0; duration: 700 }
+              }
+            }
+          }
 
           Repeater {
             model: root.particles
             delegate: Rectangle {
               required property var modelData
-              width: 5
-              height: 5
-              radius: 2.5
+              width: modelData.size
+              height: modelData.size
+              radius: modelData.size / 2
               color: modelData.tint !== "" ? modelData.tint : Color.accent
               opacity: 0
               x: modelData.x
@@ -364,13 +460,24 @@ Panel {
               SequentialAnimation on opacity {
                 running: true
                 PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 0; to: 0.9; duration: 80 }
-                NumberAnimation { from: 0.9; to: 0; duration: 520; easing.type: Easing.InQuad }
+                NumberAnimation { from: 0; to: 1; duration: 70 }
+                NumberAnimation { from: 1; to: 0; duration: 640; easing.type: Easing.InQuad }
               }
               SequentialAnimation on y {
                 running: true
                 PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 40; to: 4; duration: 620; easing.type: Easing.OutCubic }
+                NumberAnimation { from: 48; to: -6; duration: 720; easing.type: Easing.OutCubic }
+              }
+              SequentialAnimation on x {
+                running: true
+                PauseAnimation { duration: modelData.delay }
+                NumberAnimation { from: modelData.x; to: modelData.x + modelData.drift; duration: 720 }
+              }
+              SequentialAnimation on scale {
+                running: true
+                PauseAnimation { duration: modelData.delay }
+                NumberAnimation { from: 0.4; to: 1.3; duration: 180 }
+                NumberAnimation { from: 1.3; to: 0.2; duration: 540 }
               }
             }
           }
@@ -383,6 +490,7 @@ Panel {
             mood: root.capy.mood
             popped: root.actionPop
             scale: root.heroScale
+            rotation: root.heroSpin
             transformOrigin: Item.Center
           }
 
@@ -426,6 +534,8 @@ Panel {
         Row {
           width: parent.width
           spacing: Style.space(18)
+          opacity: root.statsIn
+          y: (1 - root.statsIn) * 8
 
           Repeater {
             model: root.meters
@@ -469,6 +579,12 @@ Panel {
             }
           }
         }
+
+        Column {
+          width: parent.width
+          spacing: Style.space(14)
+          opacity: root.restIn
+          y: (1 - root.restIn) * 10
 
         PanelSeparator { foreground: root.fg }
 
@@ -557,14 +673,15 @@ Panel {
 
           Text {
             width: parent.width
-            visible: root.capy.lastWisdom !== ""
-            text: root.capy.lastWisdom
+            visible: root.shownWisdom !== ""
+            text: root.shownWisdom
             color: root.fg
-            opacity: 0.82
+            opacity: 0.82 * root.wisdomOpacity
             wrapMode: Text.WordWrap
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
           }
+        }
         }
       }
     }
