@@ -279,6 +279,7 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
+    centerOnBar: true
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(360))
     contentHeight: panel.fittedContentHeight(column.implicitHeight)
