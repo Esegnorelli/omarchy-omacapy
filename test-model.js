@@ -60,20 +60,28 @@ assert("lonely after neglect", M.deriveMood(lonely, 0.2, t0) === "lonely")
 var nap = Object.assign(M.defaultState(night), { happiness: 60, lastInteractMs: night })
 assert("naps at night", M.deriveMood(nap, 0.2, night) === "napping")
 
-var soaked = Object.assign(M.defaultState(t0), { zen: 90, happiness: 80, lastInteractMs: t0 })
-assert("soaked when zen", M.deriveMood(soaked, 0.2, t0) === "soaked")
+var soaked = Object.assign(M.defaultState(t0), {
+  zen: 90, happiness: 80, lastInteractMs: t0, lastAction: "soak", lastActionMs: t0,
+})
+assert("soaked after soak", M.deriveMood(soaked, 0.2, t0) === "soaked")
+assert("soaked expires", M.deriveMood(soaked, 0.2, t0 + 160000) === "chill")
 
-var yum = Object.assign(M.defaultState(t0), { belly: 90, zen: 50, happiness: 50, lastInteractMs: t0 })
-assert("munching when full", M.deriveMood(yum, 0.2, t0) === "munching")
+var yum = Object.assign(M.defaultState(t0), {
+  belly: 90, zen: 50, happiness: 50, lastInteractMs: t0, lastAction: "orange", lastActionMs: t0,
+})
+assert("munching after orange", M.deriveMood(yum, 0.2, t0) === "munching")
 
-var hype = Object.assign(M.defaultState(t0), { happiness: 95, zen: 50, belly: 40, lastInteractMs: t0 })
-assert("hyped when loved", M.deriveMood(hype, 0.2, t0) === "hyped")
+var hype = Object.assign(M.defaultState(t0), {
+  happiness: 95, zen: 50, belly: 40, lastInteractMs: t0, lastAction: "pet", lastActionMs: t0,
+})
+assert("hyped after pet", M.deriveMood(hype, 0.2, t0) === "hyped")
 
 var meh = Object.assign(M.defaultState(t0), { happiness: 20, zen: 50, lastInteractMs: t0 })
 assert("meh when sad", M.deriveMood(meh, 0.2, t0) === "meh")
 
 var p = M.pet(idle, 0.2, t0 + 1000)
 assert("pet raises happiness", p.happiness > idle.happiness && p.pets === 1 && p.bond === 1)
+assert("pet marks action", p.lastAction === "pet")
 var o = M.orange(idle, 0.2, t0 + 1000)
 assert("orange fills belly", o.belly > idle.belly && o.oranges === 1)
 var k = M.soak(idle, 0.2, t0 + 1000)

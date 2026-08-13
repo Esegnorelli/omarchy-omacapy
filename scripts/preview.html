@@ -72,12 +72,12 @@
       border-radius: 8px; border: 1px solid #353028; font-size: 11px; color: #cfc8bc;
     }
     .sides .on { background: #2a2218; border-color: #c98422; color: #f6d27a; }
+    .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .act {
-      height: 34px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 12px; border-radius: 8px; font-size: 12px;
+      height: 34px; display: grid; place-items: center;
+      border-radius: 8px; font-size: 12px; border: 1px solid #353028;
     }
-    .act em { font-style: normal; color: #8b8680; font-size: 10px; }
-    .act.sel { background: #2a2218; }
+    .act.sel { background: #2a2218; border-color: #c98422; }
     .quote { color: #cfc8bc; font-size: 11px; line-height: 1.45; }
   </style>
 </head>
@@ -108,18 +108,18 @@
         <div class="stat"><div class="k">ZEN</div><div class="v">80%</div><div class="track"><div class="fill" style="width:80%"></div></div></div>
       </div>
       <div class="rule"></div>
+      <div class="acts">
+        <div class="act sel">Pet</div>
+        <div class="act">Orange</div>
+        <div class="act">Soak</div>
+        <div class="act">Wisdom</div>
+      </div>
+      <div class="quote">If it is not a river problem, stand still like a capy.</div>
+      <div class="rule"></div>
       <div class="sec">SIDE</div>
       <div class="sides">
         <span>Left</span><span class="on">Center</span><span>Right</span>
       </div>
-      <div class="rule"></div>
-      <div class="sec">ACTIONS</div>
-      <div class="act sel"><span>Pet</span><em>The official hello</em></div>
-      <div class="act"><span>Orange</span><em>Diplomatic citrus</em></div>
-      <div class="act"><span>Soak</span><em>Send it to the river</em></div>
-      <div class="act"><span>Wisdom</span><em>A one-liner</em></div>
-      <div class="rule"></div>
-      <div class="quote">If it is not a river problem, stand still like a capy.</div>
     </section>
   </div>
 </body>

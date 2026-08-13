@@ -23,6 +23,8 @@ function defaultState(ts) {
     lastInteractMs: ts,
     lastTickMs: ts,
     lastWisdom: "",
+    lastAction: "",
+    lastActionMs: 0,
     toast: "",
     mood: "chill",
   }
@@ -51,6 +53,8 @@ function normalizeState(raw, ts) {
     lastInteractMs: Number(raw.lastInteractMs) || ts || nowMs(),
     lastTickMs: Number(raw.lastTickMs) || ts || nowMs(),
     lastWisdom: String(raw.lastWisdom || ""),
+    lastAction: String(raw.lastAction || ""),
+    lastActionMs: Math.max(0, Number(raw.lastActionMs) || 0),
     toast: String(raw.toast || ""),
     mood: String(raw.mood || "chill"),
   }
@@ -80,6 +84,8 @@ function serializeState(state) {
     lastInteractMs: s.lastInteractMs,
     lastTickMs: s.lastTickMs,
     lastWisdom: s.lastWisdom,
+    lastAction: s.lastAction,
+    lastActionMs: s.lastActionMs,
     mood: s.mood,
   }, null, 2) + "\n"
 }
@@ -98,12 +104,14 @@ function deriveMood(state, load, ts) {
   ts = ts || nowMs()
   var hour = hourLocal(ts)
   var lonelyMs = ts - (state.lastInteractMs || ts)
+  var since = ts - (state.lastActionMs || 0)
+  var act = String(state.lastAction || "")
   if (load >= 4.5 || state.zen < 20) return "fried"
   if (lonelyMs > 6 * 60 * 60 * 1000 && state.happiness < 45) return "lonely"
   if ((hour >= 23 || hour < 6) && state.happiness > 35) return "napping"
-  if (state.zen >= 88 && state.happiness >= 70) return "soaked"
-  if (state.belly >= 85) return "munching"
-  if (state.happiness >= 90) return "hyped"
+  if (act === "soak" && since < 150000) return "soaked"
+  if (act === "orange" && since < 120000) return "munching"
+  if (act === "pet" && since < 80000) return "hyped"
   if (state.happiness < 30) return "meh"
   return "chill"
 }
@@ -155,6 +163,8 @@ function pet(state, load, ts) {
   state.bond += 1
   state.happiness = clamp(state.happiness + 10, 0, 100)
   state.zen = clamp(state.zen + 4, 0, 100)
+  state.lastAction = "pet"
+  state.lastActionMs = ts
   state.toast = pick([
     "soft head received",
     "capy purr (theoretical)",
@@ -174,6 +184,8 @@ function orange(state, load, ts) {
   state.bond += 1
   state.belly = clamp(state.belly + 22, 0, 100)
   state.happiness = clamp(state.happiness + 8, 0, 100)
+  state.lastAction = "orange"
+  state.lastActionMs = ts
   state.toast = pick([
     "orange acquired",
     "citrus diplomacy succeeds",
@@ -193,6 +205,8 @@ function soak(state, load, ts) {
   state.bond += 1
   state.zen = clamp(state.zen + 24, 0, 100)
   state.happiness = clamp(state.happiness + 6, 0, 100)
+  state.lastAction = "soak"
+  state.lastActionMs = ts
   state.toast = pick([
     "thermal reset complete",
     "now 12% more river",
