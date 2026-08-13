@@ -510,30 +510,59 @@ Panel {
 
         PanelSeparator { foreground: root.fg }
 
-        Grid {
+        Column {
           width: parent.width
-          columns: 2
-          columnSpacing: Style.space(8)
-          rowSpacing: Style.space(8)
+          spacing: Style.space(8)
 
-          Repeater {
-            model: root.actions
-            delegate: Button {
-              required property var modelData
-              required property int index
-              width: (parent.width - Style.space(8)) / 2
-              text: modelData.label
-              tooltipText: modelData.detail
+          Row {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Button {
+              width: (parent.width - parent.spacing) / 2
+              text: "Pet"
+              tooltipText: "The official hello"
               foreground: root.fg
               fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === index
-              onHovered: function(on) {
-                if (on) {
-                  root.cursorActive = true
-                  root.cursorIndex = index
-                }
-              }
-              onClicked: root.doAction(modelData.id)
+              hasCursor: root.cursorActive && root.cursorIndex === 0
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
+              onClicked: root.doAction("pet")
+            }
+            Button {
+              width: (parent.width - parent.spacing) / 2
+              text: "Orange"
+              tooltipText: "Diplomatic citrus"
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 1
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
+              onClicked: root.doAction("orange")
+            }
+          }
+
+          Row {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Button {
+              width: (parent.width - parent.spacing) / 2
+              text: "Soak"
+              tooltipText: "Send it to the river"
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 2
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
+              onClicked: root.doAction("soak")
+            }
+            Button {
+              width: (parent.width - parent.spacing) / 2
+              text: "Wisdom"
+              tooltipText: "A one-liner"
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 3
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
+              onClicked: root.doAction("wisdom")
             }
           }
         }
@@ -561,14 +590,22 @@ Panel {
             fontFamily: root.fontFamily
           }
 
-          ButtonGroup {
+          Row {
             width: parent.width
-            options: root.sides
-            value: root.panelSide
-            foreground: root.fg
-            fontFamily: root.fontFamily
-            focusable: false
-            onChanged: function(v) { root.setSide(v) }
+            spacing: Style.space(8)
+
+            Repeater {
+              model: root.sides
+              delegate: Button {
+                required property var modelData
+                width: (parent.width - Style.space(16)) / 3
+                text: modelData.label
+                selected: root.panelSide === modelData.value
+                foreground: root.fg
+                fontFamily: root.fontFamily
+                onClicked: root.setSide(modelData.value)
+              }
+            }
           }
         }
       }
