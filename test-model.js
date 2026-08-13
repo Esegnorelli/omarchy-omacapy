@@ -77,6 +77,21 @@ var round = M.parseState(M.serializeState(s), 50000)
 assert("roundtrip practice", M.languageStat(round, "python").ms === 30000)
 assert("badge prefers focus", M.badgeLang(s, "ai").id === "ai")
 
+var gh = M.parseGithub(JSON.stringify({
+  ok: true,
+  login: "Esegnorelli",
+  notifications: { count: 12, items: [{ title: "CI failed", repo: "a/b", type: "CheckSuite" }] },
+  reviews: { total: 1, items: [{ title: "Please review", url: "https://github.com/a/b/pull/1" }] },
+  prs: { total: 2, items: [{ title: "My PR", url: "https://github.com/a/b/pull/2" }] },
+  assigned: { total: 0, items: [] },
+}))
+assert("gh ok", gh.ok && gh.login === "Esegnorelli")
+assert("gh counts", gh.notificationCount === 12 && gh.reviewCount === 1 && gh.prCount === 2)
+assert("gh badge", M.githubBadgeCount(gh) === 13)
+assert("gh rows", M.githubRows(gh).length === 2 && M.githubRows(gh)[0].kind === "review")
+assert("gh repo", M.repoName("https://github.com/a/b/pull/2") === "a/b")
+assert("gh missing", M.parseGithub('{"ok":false,"error":"Run gh auth login."}').error.indexOf("gh auth") !== -1)
+
 if (fails) {
   console.log(fails + " failed")
   process.exit(1)

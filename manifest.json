@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "author": "Esegnorelli",
   "license": "MIT",
-  "description": "The language or AI tool you are in, plus practice hours, on the Omarchy bar. Nvim-style icons. No accounts, no network.",
+  "description": "Language or AI on the Omarchy bar, practice hours, and your GitHub inbox via gh. PRs, review requests, notifications. No extra accounts.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Stack",
-    "description": "Language or AI icon plus practice hours.",
+    "description": "Language, AI practice, and GitHub inbox via gh.",
     "category": "Widgets",
     "allowMultiple": false,
     "defaultSection": "center"

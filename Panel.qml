@@ -18,6 +18,7 @@ Panel {
   readonly property string langHintPath: stateDir + "/omacapy-lang"
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || (home + "/.config")
   readonly property string scanPath: configHome + "/omarchy/plugins/esegnorelli.omacapy/scan-focus.sh"
+  readonly property string githubPath: configHome + "/omarchy/plugins/esegnorelli.omacapy/github-scan.sh"
 
   property var store: Model.defaultState(Date.now())
   property bool hydrateDone: false
@@ -25,6 +26,7 @@ Panel {
   property string focusProcs: ""
   property string focusLangId: ""
   property var stack: []
+  property var github: Model.emptyGithub()
 
   readonly property var toplevel: ToplevelManager.activeToplevel
   readonly property string winTitle: toplevel ? (toplevel.title || "") : ""
@@ -34,6 +36,8 @@ Panel {
   readonly property var shownStat: Model.languageStat(store, shownLang ? shownLang.id : "")
   readonly property real shownScore: Model.practiceScore(shownStat.ms)
   readonly property bool live: !!liveLang
+  readonly property var githubInbox: Model.githubRows(github)
+  readonly property int githubCount: Model.githubBadgeCount(github)
 
   function persist() {
     if (!hydrateDone) return
@@ -62,18 +66,36 @@ Panel {
     if (hydrateDone) persist()
   }
 
+  function refreshGithub() {
+    if (!githubProc.running)
+      githubProc.running = true
+  }
+
+  function applyGithub(raw) {
+    github = Model.parseGithub(raw)
+  }
+
+  function openUrl(url) {
+    if (!url) return
+    Quickshell.execDetached(["xdg-open", url])
+  }
+
   onWinTitleChanged: resolveFocus()
   onWinAppChanged: resolveFocus()
   onNvimHintChanged: resolveFocus()
 
   onOpenedChanged: {
-    if (opened) runTick()
+    if (opened) {
+      runTick()
+      refreshGithub()
+    }
   }
 
   Component.onCompleted: {
     mkdirProc.running = true
     if (!scanProc.running) scanProc.running = true
     if (!hintProc.running) hintProc.running = true
+    refreshGithub()
   }
 
   implicitWidth: button.implicitWidth
@@ -136,11 +158,27 @@ Panel {
     }
   }
 
+  Process {
+    id: githubProc
+    command: ["sh", root.githubPath]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyGithub(text)
+    }
+  }
+
   Timer {
     interval: 15000
     running: true
     repeat: true
     onTriggered: root.runTick()
+  }
+
+  Timer {
+    interval: 180000
+    running: true
+    repeat: true
+    onTriggered: root.refreshGithub()
   }
 
   Timer {
@@ -160,14 +198,18 @@ Panel {
     bar: root.bar
     text: root.shownLang ? root.shownLang.short : "dev"
     labelVisible: false
-    active: root.live
     useActiveColor: false
-    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(64)
+    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(root.githubCount > 0 ? 76 : 64)
     fixedHeight: root.bar && root.bar.vertical ? Style.space(36) : -1
     horizontalMargin: 6
-    tooltipText: Model.tooltip(root.store, root.focusLangId)
+    tooltipText: Model.tooltip(root.store, root.focusLangId, root.github)
     opacity: root.live ? 1 : 0.72
+    active: root.live || root.githubCount > 0
     onPressed: function(b) {
+      if (b === Qt.MiddleButton) {
+        root.openUrl("https://github.com/notifications")
+        return
+      }
       if (b === Qt.LeftButton) root.toggle()
     }
 
@@ -186,7 +228,11 @@ Panel {
         }
         Text {
           visible: !(root.bar && root.bar.vertical)
-          text: root.shownLang ? root.shownLang.short : "dev"
+          text: {
+            var label = root.shownLang ? root.shownLang.short : "dev"
+            if (root.githubCount > 0) label += " " + root.githubCount
+            return label
+          }
           color: button.foreground
           font.family: button.fontFamily
           font.pixelSize: Style.font.bodySmall
@@ -252,10 +298,113 @@ Panel {
             text: root.liveLang
               ? ("In focus · " + Model.formatDuration(root.shownStat.todayMs) + " today · "
                  + Model.formatDuration(root.shownStat.weekMs) + " this week")
-              : "Hours in each language and AI tool. Nothing leaves the machine."
+              : "Hours in each language and AI tool. GitHub via gh."
             color: root.bar.foreground
             opacity: 0.65
             wrapMode: Text.WordWrap
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+        }
+
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Text {
+            width: parent.width
+            text: root.github.ok
+              ? ("GitHub · @" + root.github.login)
+              : "GitHub"
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            font.bold: true
+            opacity: 0.7
+          }
+
+          Text {
+            width: parent.width
+            visible: !root.github.ok
+            text: root.github.error || "Uses the GitHub CLI. Run gh auth login."
+            color: root.bar.foreground
+            opacity: 0.55
+            wrapMode: Text.WordWrap
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          Text {
+            width: parent.width
+            visible: root.github.ok
+            text: root.github.notificationCount + " inbox · "
+                  + root.github.reviewCount + " review · "
+                  + root.github.prCount + " your PRs"
+            color: root.bar.foreground
+            opacity: 0.65
+            wrapMode: Text.WordWrap
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          Repeater {
+            model: root.githubInbox
+            delegate: BorderSurface {
+              required property var modelData
+              width: parent.width
+              implicitHeight: ghCol.implicitHeight + Style.space(12)
+              radius: Style.cornerRadius
+              color: ghMouse.containsMouse
+                ? Style.hoverFillFor(root.bar.foreground, Color.accent)
+                : "transparent"
+              borderSpec: Border.none()
+
+              Column {
+                id: ghCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Style.space(8)
+                anchors.rightMargin: Style.space(8)
+                spacing: 2
+                Text {
+                  text: modelData.label
+                  color: Color.accent
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                  font.bold: true
+                }
+                Text {
+                  width: parent.width
+                  text: modelData.title
+                  color: root.bar.foreground
+                  wrapMode: Text.WordWrap
+                  elide: Text.ElideRight
+                  maximumLineCount: 2
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                }
+              }
+
+              MouseArea {
+                id: ghMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                  if (modelData.url) root.openUrl(modelData.url)
+                  else root.openUrl("https://github.com/notifications")
+                }
+              }
+            }
+          }
+
+          Text {
+            width: parent.width
+            visible: root.github.ok
+            text: "Middle-click badge · github.com/notifications"
+            color: root.bar.foreground
+            opacity: 0.4
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.bodySmall
           }

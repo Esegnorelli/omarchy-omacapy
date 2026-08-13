@@ -6,7 +6,7 @@ Language and AI practice on the [Omarchy](https://omarchy.org/) bar.
 
 The badge follows what you are in — Python, Rust, Go (nvim-style icons) or **AI** when the focus is OpenCode, Claude, Grok, Codex, ChatGPT. A thin bar is how much you have practiced that stack. Click for today / this week / lifetime hours.
 
-No pets. No accounts. No network.
+GitHub uses the `gh` CLI already on the machine (`gh auth login`). The plugin never stores a token.
 
 ## How it sees the file
 
@@ -16,9 +16,21 @@ No pets. No accounts. No network.
 
 A focused `.py` wins over an agent in the same terminal. Idle browsers do not count.
 
+## GitHub
+
+Every three minutes (and when you open the lounge) it asks `gh` for:
+
+- unread notifications
+- PRs waiting for your review
+- your open PRs
+- assigned issues
+
+Click a row to open it. Middle-click the badge for `github.com/notifications`.
+
 ## Badge
 
 - **Left-click** — open / close the stack
+- **Middle-click** — GitHub notifications
 
 State: `~/.local/state/omarchy/omacapy.json`  
 Nvim hint: `~/.local/state/omarchy/omacapy-lang`
@@ -50,7 +62,7 @@ omarchy plugin remove esegnorelli.omacapy --yes
 
 - Omarchy Quattro shell
 - `hyprctl` and `jq` (already on Omarchy), for the process scan
-- Nothing else
+- `gh` authenticated (`gh auth login`), for the inbox
 
 ## License
 

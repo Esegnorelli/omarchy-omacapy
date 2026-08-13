@@ -367,13 +367,141 @@ function badgeLang(state, focusId) {
   return best
 }
 
-function tooltip(state, focusId) {
+function tooltip(state, focusId, github) {
   var lang = badgeLang(state, focusId)
-  if (!lang) return "Stack · click for practice hours"
-  var row = languageStat(state, lang.id)
-  var live = focusId === lang.id
-  return lang.name + " · " + formatDuration(row.weekMs) + " this week"
-    + (live ? "" : " · last") + " · click for stack"
+  var base = "Stack · click for practice hours"
+  if (lang) {
+    var row = languageStat(state, lang.id)
+    var live = focusId === lang.id
+    base = lang.name + " · " + formatDuration(row.weekMs) + " this week"
+      + (live ? "" : " · last")
+  }
+  var n = githubBadgeCount(github)
+  if (n > 0) base += " · " + n + " github"
+  return base + " · click"
+}
+
+function emptyGithub() {
+  return {
+    ok: false,
+    fetched: false,
+    login: "",
+    error: "",
+    notificationCount: 0,
+    reviewCount: 0,
+    prCount: 0,
+    assignedCount: 0,
+    reviews: [],
+    prs: [],
+    assigned: [],
+    notices: [],
+  }
+}
+
+function repoName(url) {
+  var s = String(url || "")
+  var m = s.match(/github\.com\/([^/]+\/[^/]+)/)
+  if (m) return m[1].replace(/\.git$/, "")
+  m = s.match(/repos\/([^/]+\/[^/]+)/)
+  if (m) return m[1]
+  return ""
+}
+
+function cleanItems(list) {
+  var out = []
+  if (!list || !list.length) return out
+  for (var i = 0; i < list.length && out.length < 5; i++) {
+    var it = list[i] || {}
+    var title = String(it.title || "").trim()
+    if (!title) continue
+    out.push({
+      title: title,
+      url: String(it.url || ""),
+      repo: String(it.repo || repoName(it.url || it.repository_url || "")),
+      reason: String(it.reason || it.type || ""),
+    })
+  }
+  return out
+}
+
+function parseGithub(raw) {
+  var empty = emptyGithub()
+  empty.fetched = true
+  try {
+    if (!raw || !String(raw).trim()) {
+      empty.error = "empty"
+      return empty
+    }
+    var d = JSON.parse(String(raw))
+    if (!d || typeof d !== "object") {
+      empty.error = "bad json"
+      return empty
+    }
+    if (!d.ok) {
+      empty.error = String(d.error || "not signed in")
+      return empty
+    }
+    var notifs = d.notifications || {}
+    var reviews = d.reviews || {}
+    var prs = d.prs || {}
+    var assigned = d.assigned || {}
+    return {
+      ok: true,
+      fetched: true,
+      login: String(d.login || ""),
+      error: "",
+      notificationCount: Math.max(0, Number(notifs.count) || 0),
+      reviewCount: Math.max(0, Number(reviews.total) || 0),
+      prCount: Math.max(0, Number(prs.total) || 0),
+      assignedCount: Math.max(0, Number(assigned.total) || 0),
+      reviews: cleanItems(reviews.items),
+      prs: cleanItems(prs.items),
+      assigned: cleanItems(assigned.items),
+      notices: cleanItems(notifs.items),
+    }
+  } catch (e) {
+    empty.error = "bad json"
+    return empty
+  }
+}
+
+function githubBadgeCount(github) {
+  if (!github || !github.ok) return 0
+  return (Number(github.reviewCount) || 0) + (Number(github.notificationCount) || 0)
+}
+
+function githubRows(github) {
+  if (!github || !github.ok) return []
+  var rows = []
+  var i
+  for (i = 0; i < (github.reviews || []).length; i++) {
+    rows.push({
+      kind: "review",
+      label: "Review",
+      title: github.reviews[i].title,
+      url: github.reviews[i].url,
+      repo: github.reviews[i].repo,
+    })
+  }
+  for (i = 0; i < (github.prs || []).length; i++) {
+    rows.push({
+      kind: "pr",
+      label: "PR",
+      title: github.prs[i].title,
+      url: github.prs[i].url,
+      repo: github.prs[i].repo,
+    })
+  }
+  for (i = 0; i < (github.assigned || []).length; i++) {
+    rows.push({
+      kind: "issue",
+      label: "Assigned",
+      title: github.assigned[i].title,
+      url: github.assigned[i].url,
+      repo: github.assigned[i].repo,
+    })
+  }
+  return rows.slice(0, 8)
 }
 
 if (typeof module !== "undefined") {
@@ -394,6 +522,11 @@ if (typeof module !== "undefined") {
     stackRows: stackRows,
     badgeLang: badgeLang,
     tooltip: tooltip,
+    emptyGithub: emptyGithub,
+    parseGithub: parseGithub,
+    githubBadgeCount: githubBadgeCount,
+    githubRows: githubRows,
+    repoName: repoName,
     dayKey: dayKey,
     weekKey: weekKey,
   }
