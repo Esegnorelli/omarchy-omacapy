@@ -1,8 +1,8 @@
-# OmaCapy
+# Stack
 
-![OmaCapy](preview.png)
+![Stack](preview.png)
 
-Language and AI practice on the [Omarchy](https://omarchy.org/) bar.
+Language and AI practice on the [Omarchy](https://omarchy.org/) bar. Same one-word style as Network or Agents.
 
 The badge follows what you are in — Python, Rust, Go (nvim-style icons) or **AI** when the focus is OpenCode, Claude, Grok, Codex, ChatGPT. A thin bar is how much you have practiced that stack. Click for today / this week / lifetime hours.
 

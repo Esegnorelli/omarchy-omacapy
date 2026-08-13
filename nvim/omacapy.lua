@@ -1,4 +1,4 @@
--- Optional nvim hook: tell OmaCapy which language is in the current buffer.
+-- Optional nvim hook: tell Stack which language is in the current buffer.
 --
 --   luafile /path/to/omarchy-omacapy/nvim/omacapy.lua
 --
@@ -28,6 +28,6 @@ vim.o.title = true
 vim.o.titlestring = "%t"
 
 vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
-  group = vim.api.nvim_create_augroup("OmaCapyLang", { clear = true }),
+  group = vim.api.nvim_create_augroup("StackLang", { clear = true }),
   callback = write_lang,
 })
