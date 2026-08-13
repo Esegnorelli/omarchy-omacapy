@@ -10,110 +10,97 @@ function assert(name, cond) {
   console.log("FAIL  " + name)
 }
 
-function langId(title, app, hint) {
-  var lang = M.detectLanguage(title, app, hint)
-  return lang ? lang.id : null
-}
+var t0 = new Date(2026, 7, 13, 15, 0, 0).getTime()
+var night = new Date(2026, 7, 13, 23, 30, 0).getTime()
 
-assert("py file", langId("app.py") === "python")
-assert("vscode title", langId("app.py — horadopastel - Visual Studio Code") === "python")
-assert("path", langId("/home/x/Projects/foo/main.rs") === "rust")
-assert("nvim titlestring", langId("omacapy.lua") === "lua")
-assert("ghostty idle", langId("trabalho: ~") === null)
-assert("cargo", langId("Cargo.toml — rust-app") === "rust")
-assert("dockerfile", langId("Dockerfile") === "docker")
-assert("hint needs nvim", langId("trabalho: ~", "com.mitchellh.ghostty", "python") === null)
-assert("hint filetype", M.detectLanguage("trabalho: ~", "com.mitchellh.ghostty", "python", "ghostty nvim").id === "python")
-assert("hint filename", M.detectLanguage("trabalho: ~", "", "main.go", "nvim").id === "go")
-assert("qml", langId("Panel.qml") === "qml")
-assert("tsx", langId("App.tsx") === "tsx")
-assert("opencode title", langId("OpenCode") === "ai")
-assert("chatgpt browser", langId("ChatGPT", "chrome-chatgpt.com__-Default") === "ai")
-assert("grok title", langId("Grok — chat") === "ai")
-assert("opencode proc", M.detectLanguage("trabalho: ~", "com.mitchellh.ghostty", "", "ghostty opencode").id === "ai")
-assert("file beats ai", M.detectLanguage("app.py — x", "", "", "opencode").id === "python")
-assert("nvim hint with nvim", M.detectLanguage("trabalho: ~", "ghostty", "python", "ghostty nvim").id === "python")
-assert("stale hint ignored", M.detectLanguage("trabalho: ~", "firefox", "python", "firefox") === null)
+var idle = M.defaultState(t0)
+assert("v4 default", idle.version === 4 && idle.mood === "chill")
+assert("default meters", M.meters(idle).length === 3 && M.meters(idle)[0].label === "Happiness")
+assert("visitor rank", M.bondRank(0) === "visitor")
+assert("roommate rank", M.bondRank(10) === "roommate")
+assert("family rank", M.bondRank(30) === "family")
+assert("river kin rank", M.bondRank(80) === "river kin")
 
-var idle = M.defaultState(1000)
-assert("v3 state", idle.version === 3 && idle.languages && typeof idle.languages === "object")
+assert("empty parse", M.parseState("", t0).version === 4)
+assert("bad json", M.parseState("{", t0).happiness === 72)
+assert("loadavg", M.parseLoad("1.25 0.80 0.40 1/234 99") === 1.25)
+assert("load empty", M.parseLoad("") === 0)
 
-var s = M.tickPractice(idle, "python", 1000 + 15000)
-assert("practice adds 15s", M.languageStat(s, "python").ms === 15000)
-s = M.tickPractice(s, "python", 1000 + 30000)
-assert("practice accumulates", M.languageStat(s, "python").ms === 30000)
-s = M.tickPractice(s, "rust", 1000 + 45000)
-assert("other lang isolated", M.languageStat(s, "python").ms === 30000 && M.languageStat(s, "rust").ms === 15000)
-s = M.tickPractice(s, "ai", 1000 + 60000)
-assert("ai isolated", M.languageStat(s, "ai").ms === 15000 && M.languageStat(s, "python").ms === 30000)
-
-var tiny = M.tickPractice(idle, "python", 1000 + 200)
-assert("ignores sub-second", M.languageStat(tiny, "python").ms === 0)
-
-var slept = M.tickPractice(idle, "python", 1000 + 5 * 60 * 1000)
-assert("caps long gap", M.languageStat(slept, "python").ms === 20000)
-
-assert("score empty", M.practiceScore(0) === 0)
-assert("score grows", M.practiceScore(8 * 3600000) > 50 && M.practiceScore(8 * 3600000) < 70)
-assert("format 0", M.formatDuration(0) === "0m")
-assert("format 20s", M.formatDuration(20000) === "<1m")
-assert("format 5m", M.formatDuration(5 * 60000) === "5m")
-assert("format 90m", M.formatDuration(90 * 60000) === "1h 30m")
-
-var old = M.parseState(JSON.stringify({
-  version: 2,
+var v1 = M.parseState(JSON.stringify({
+  version: 1,
   happiness: 40,
-  languages: { python: { ms: 90000, todayMs: 90000, weekMs: 90000 } },
-}), 2000)
-assert("migrates v2 langs", old.version === 3 && M.languageStat(old, "python").ms === 90000)
-assert("drops pet fields", old.happiness == null)
+  belly: 20,
+  zen: 10,
+  pets: 3,
+  bond: 4,
+}), t0)
+assert("migrates v1 pet", v1.version === 4 && v1.happiness === 40 && v1.pets === 3)
 
-var rows = M.stackRows(s, "python")
-assert("stack focuses python", rows[0].id === "python" && rows[0].active)
-assert("stack has rust", rows.some(function(r) { return r.id === "rust" }))
-assert("stack has ai", rows.some(function(r) { return r.id === "ai" }))
+var stack = M.parseState(JSON.stringify({
+  version: 3,
+  languages: { python: { ms: 90000 } },
+}), t0)
+assert("drops language stack", stack.happiness === 72 && stack.languages == null)
 
-var round = M.parseState(M.serializeState(s), 50000)
-assert("roundtrip practice", M.languageStat(round, "python").ms === 30000)
-assert("badge prefers focus", M.badgeLang(s, "ai").id === "ai")
+var s = M.tick(idle, 0.2, t0)
+assert("zero dt keeps meters", s.happiness === 72)
 
-assert("gh lang ts", M.mapGithubLanguage("TypeScript").id === "typescript")
-assert("gh lang plpgsql", M.mapGithubLanguage("PLpgSQL").id === "sql")
-assert("gh lang jupyter", M.mapGithubLanguage("Jupyter Notebook").id === "python")
-assert("gh lang dockerfile", M.mapGithubLanguage("Dockerfile").id === "docker")
+s = M.tick(idle, 0.2, t0 + 10 * 60 * 1000)
+assert("decays belly", s.belly < 58 && s.belly > 50)
+assert("decays happiness", s.happiness < 72 && s.happiness > 68)
 
-var merged = M.stackRows(M.defaultState(1), "python", {
-  ok: true,
-  languages: [
-    { name: "TypeScript", bytes: 4000000 },
-    { name: "Python", bytes: 100000 },
-    { name: "QML", bytes: 20000 },
-  ],
-})
-assert("merge includes ts", merged.some(function(r) { return r.id === "typescript" && r.onGithub }))
-assert("merge includes qml", merged.some(function(r) { return r.id === "qml" && r.onGithub }))
-assert("focus first", merged[0].id === "python")
+var hot = M.tick(Object.assign(M.defaultState(t0), { zen: 50, lastTickMs: t0 }), 5, t0 + 20 * 60 * 1000)
+assert("load cooks zen", hot.zen < 50)
+assert("fried from load", M.deriveMood(Object.assign(M.defaultState(t0), { zen: 50 }), 5, t0) === "fried")
+assert("fried from zen", M.deriveMood(Object.assign(M.defaultState(t0), { zen: 10 }), 0.1, t0) === "fried")
 
-var popular = M.stackRows(M.defaultState(1), "", { ok: false, languages: [] })
-assert("popular fallback", popular.some(function(r) { return r.id === "go" }) && popular.length >= 8)
+var lonely = Object.assign(M.defaultState(t0), { happiness: 30, lastInteractMs: t0 - 7 * 60 * 60 * 1000 })
+assert("lonely after neglect", M.deriveMood(lonely, 0.2, t0) === "lonely")
 
-var gh = M.parseGithub(JSON.stringify({
-  ok: true,
-  login: "Esegnorelli",
-  notifications: { count: 12, items: [{ title: "CI failed", repo: "a/b", type: "CheckSuite" }] },
-  reviews: { total: 1, items: [{ title: "Please review", url: "https://github.com/a/b/pull/1" }] },
-  prs: { total: 2, items: [{ title: "My PR", url: "https://github.com/a/b/pull/2" }] },
-  assigned: { total: 0, items: [] },
-}))
-assert("gh ok", gh.ok && gh.login === "Esegnorelli")
-assert("gh counts", gh.notificationCount === 12 && gh.reviewCount === 1 && gh.prCount === 2)
-assert("gh badge", M.githubBadgeCount(gh) === 13)
-assert("gh rows", M.githubRows(gh).length === 2 && M.githubRows(gh)[0].kind === "review")
-assert("gh repo", M.repoName("https://github.com/a/b/pull/2") === "a/b")
-assert("gh missing", M.parseGithub('{"ok":false,"error":"Run gh auth login."}').error.indexOf("gh auth") !== -1)
+var nap = Object.assign(M.defaultState(night), { happiness: 60, lastInteractMs: night })
+assert("naps at night", M.deriveMood(nap, 0.2, night) === "napping")
+
+var soaked = Object.assign(M.defaultState(t0), { zen: 90, happiness: 80, lastInteractMs: t0 })
+assert("soaked when zen", M.deriveMood(soaked, 0.2, t0) === "soaked")
+
+var yum = Object.assign(M.defaultState(t0), { belly: 90, zen: 50, happiness: 50, lastInteractMs: t0 })
+assert("munching when full", M.deriveMood(yum, 0.2, t0) === "munching")
+
+var hype = Object.assign(M.defaultState(t0), { happiness: 95, zen: 50, belly: 40, lastInteractMs: t0 })
+assert("hyped when loved", M.deriveMood(hype, 0.2, t0) === "hyped")
+
+var meh = Object.assign(M.defaultState(t0), { happiness: 20, zen: 50, lastInteractMs: t0 })
+assert("meh when sad", M.deriveMood(meh, 0.2, t0) === "meh")
+
+var p = M.pet(idle, 0.2, t0 + 1000)
+assert("pet raises happiness", p.happiness > idle.happiness && p.pets === 1 && p.bond === 1)
+var o = M.orange(idle, 0.2, t0 + 1000)
+assert("orange fills belly", o.belly > idle.belly && o.oranges === 1)
+var k = M.soak(idle, 0.2, t0 + 1000)
+assert("soak restores zen", k.zen > idle.zen && k.soaks === 1)
+
+var w1 = M.wisdom(idle, 0.2, t0 + 1000)
+var w2 = M.wisdom(w1, 0.2, t0 + 2000)
+assert("wisdom writes a line", w1.lastWisdom.length > 10)
+assert("wisdom does not repeat", w1.lastWisdom !== w2.lastWisdom)
+assert("wisdom advances index", w2.wisdomIndex === 2)
+
+var toastA = M.pet(idle, 0.2, t0 + 1000).toast
+var toastB = M.pet(idle, 0.2, t0 + 1000).toast
+assert("toast deterministic", toastA === toastB && toastA.length > 0)
+
+var round = M.parseState(M.serializeState(p), t0 + 5000)
+assert("roundtrip pets", round.pets === 1 && round.version === 4)
+assert("toast not persisted", JSON.parse(M.serializeState(p)).toast == null)
+
+assert("portrait soaked", M.portraitFor("soaked") === "capy-soaked.png")
+assert("portrait chill", M.portraitFor("chill") === "capy.png")
+assert("four actions", M.actions().map(function(a) { return a.id }).join(",") === "pet,orange,soak,wisdom")
+assert("bar word", M.moodMeta("chill").bar === "Capy")
+assert("tooltip", M.tooltip(idle, 1.5).indexOf("OmaCapy") === 0)
 
 if (fails) {
   console.log(fails + " failed")
   process.exit(1)
 }
-console.log("all passed")
+console.log("all good")

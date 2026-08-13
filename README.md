@@ -1,39 +1,47 @@
-# Stack
+# OmaCapy
 
-![Stack](preview.png)
+![OmaCapy](preview.png)
 
-Language and AI practice on the [Omarchy](https://omarchy.org/) bar. Same one-word style as Network or Agents.
+**The playful roommate Omarchy didn't ship.**
 
-The badge follows what you are in — Python, Rust, Go (nvim-style icons) or **AI** when the focus is OpenCode, Claude, Grok, Codex, ChatGPT. A thin bar is how much you have practiced that stack. Click for today / this week / lifetime hours.
+It sits on the [Omarchy](https://omarchy.org/) bar next to clock and weather — same shell, same theme, nothing extra to install. Pet it. Feed it oranges. Soak it. Collect omakase one-liners. When the machine fries, the rodent looks fried too.
 
-GitHub uses the `gh` CLI already on the machine (`gh auth login`). The plugin never stores a token. The stack lists languages from your repos (and popular ones if `gh` is offline).
+Computers can be useful **and** fun.
 
-## How it sees the file
+## What you do
 
-- Window title (VS Code, Cursor, Zed, JetBrains)
-- Process tree of the focused window (so Ghostty `trabalho: ~` still finds `nvim` / `opencode` / `grok`)
-- Optional nvim hook: copy `nvim/omacapy.lua` to `~/.config/nvim/plugin/omacapy.lua`
+| Button | What happens |
+| --- | --- |
+| **Pet** | Happiness up. The official hello. |
+| **Orange** | Snacks up. Diplomatic citrus. |
+| **Soak** | Zen up. Send it to the river. |
+| **Wisdom** | A one-liner. No refunds. |
 
-A focused `.py` wins over an agent in the same terminal. Idle browsers do not count.
+Happiness, snacks, and zen fade slowly on their own. Night restores zen. High CPU load (from `/proc/loadavg`) cooks it until you soak.
 
-## GitHub
+## Moods
 
-Every three minutes (and when you open the lounge) it asks `gh` for:
+The badge word and the face change with the roommate:
 
-- unread notifications
-- PRs waiting for your review
-- your open PRs
-- assigned issues
+| Mood | Means |
+| --- | --- |
+| `chill` | Default floating coworker |
+| `soaked` | Just back from the river |
+| `munching` | Currently orange |
+| `napping` | After 23:00, if it's happy enough |
+| `hyped` | Over-petted |
+| `fried` | Load is high, or zen collapsed |
+| `lonely` | Nobody visited for hours |
+| `meh` | Happiness ran low |
 
-Click a row to open it. Middle-click the badge for `github.com/notifications`.
+## Badge shortcuts
 
-## Badge
+- **Left-click** — open / close the lounge
+- **Middle-click** — quick pet
+- **Right-click** — quick wisdom
+- **Scroll up / down** — pet / orange
 
-- **Left-click** — open / close the stack
-- **Middle-click** — GitHub notifications
-
-State: `~/.local/state/omarchy/omacapy.json`  
-Nvim hint: `~/.local/state/omarchy/omacapy-lang`
+State lives in `~/.local/state/omarchy/omacapy.json`. Nothing leaves the machine.
 
 ## Install
 
@@ -41,13 +49,17 @@ Nvim hint: `~/.local/state/omarchy/omacapy-lang`
 omarchy plugin add https://github.com/Esegnorelli/omarchy-omacapy.git --enable
 ```
 
+Local checkout:
+
 ```bash
 omarchy plugin validate .
 omarchy plugin add "$PWD" --enable
 ```
 
+Optional placement:
+
 ```bash
-omarchy bar move esegnorelli.omacapy --section right
+omarchy bar move esegnorelli.omacapy --section center
 ```
 
 ## Remove
@@ -55,14 +67,18 @@ omarchy bar move esegnorelli.omacapy --section right
 ```bash
 omarchy plugin disable esegnorelli.omacapy
 omarchy plugin remove esegnorelli.omacapy --yes
-# optional: rm ~/.local/state/omarchy/omacapy.json ~/.local/state/omarchy/omacapy-lang
+# optional: rm ~/.local/state/omarchy/omacapy.json
 ```
 
 ## Requirements
 
 - Omarchy Quattro shell
-- `hyprctl` and `jq` (already on Omarchy), for the process scan
-- `gh` authenticated (`gh auth login`), for the inbox
+- Nothing else. No accounts, no network, no extra packages.
+
+## Why
+
+The plugin marketplace is full of VPNs, AI token meters, and printer queues.
+OmaCapy exists so your status bar can also host a wet friend who believes in snacks.
 
 ## License
 

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
-  "name": "Stack",
-  "version": "1.6.2",
+  "name": "OmaCapy",
+  "version": "2.0.0",
   "author": "Esegnorelli",
   "license": "MIT",
-  "description": "Language or AI on the bar, practice hours, and your GitHub inbox via gh. PRs, review, notifications. No extra accounts.",
+  "description": "A chill capybara roommate for your Omarchy bar. Pet it, feed it oranges, dunk it in the river, and collect omakase wisdom while it vibes with your CPU load.",
   "kinds": [
     "bar-widget"
   ],
@@ -13,8 +13,8 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Stack",
-    "description": "Language, AI practice, and GitHub inbox via gh",
+    "displayName": "OmaCapy",
+    "description": "Desktop capybara companion with moods, snacks, and zero productivity guilt.",
     "category": "Widgets",
     "allowMultiple": false,
     "defaultSection": "center"
