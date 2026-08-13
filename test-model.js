@@ -92,6 +92,9 @@ var w2 = M.wisdom(w1, 0.2, t0 + 2000)
 assert("wisdom writes a line", w1.lastWisdom.length > 10)
 assert("wisdom does not repeat", w1.lastWisdom !== w2.lastWisdom)
 assert("wisdom advances index", w2.wisdomIndex === 2)
+assert("wisdom marks action", w1.lastAction === "wisdom")
+var afterWisdom = M.wisdom(M.soak(idle, 0.2, t0 + 1000), 0.2, t0 + 2000)
+assert("wisdom leaves soaked", afterWisdom.mood !== "soaked")
 
 var toastA = M.pet(idle, 0.2, t0 + 1000).toast
 var toastB = M.pet(idle, 0.2, t0 + 1000).toast

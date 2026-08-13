@@ -162,8 +162,9 @@ Panel {
     else if (id === "wisdom") capy = Model.wisdom(capy, loadAvg, ts)
     else return
     persist()
+    if (id === "wisdom") flashWisdom(capy.lastWisdom || "")
+    else flashWisdom("")
     showToast(capy.toast || "")
-    flashWisdom(capy.lastWisdom || "")
     playActionMotion(id)
   }
 
@@ -187,7 +188,7 @@ Panel {
       heroSpin = 0
       loungeOpacity = 0
       loungeSlide = 8
-      flashWisdom(capy.lastWisdom || "")
+      flashWisdom(capy.lastAction === "wisdom" ? (capy.lastWisdom || "") : "")
       openAnim.restart()
     } else {
       loungeOpacity = 0
@@ -514,49 +515,69 @@ Panel {
           width: parent.width
           spacing: Style.space(6)
 
-          Button {
+          Item {
             width: parent.width
-            text: "Pet"
-            tooltipText: "The official hello"
-            leftAlign: true
-            foreground: root.fg
-            fontFamily: root.fontFamily
-            hasCursor: root.cursorActive && root.cursorIndex === 0
-            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
-            onClicked: root.doAction("pet")
+            height: Style.space(36)
+            Button {
+              anchors.fill: parent
+              text: "Pet"
+              tooltipText: "The official hello"
+              bordered: true
+              leftAlign: true
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 0
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
+              onClicked: root.doAction("pet")
+            }
           }
-          Button {
+          Item {
             width: parent.width
-            text: "Orange"
-            tooltipText: "Diplomatic citrus"
-            leftAlign: true
-            foreground: root.fg
-            fontFamily: root.fontFamily
-            hasCursor: root.cursorActive && root.cursorIndex === 1
-            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
-            onClicked: root.doAction("orange")
+            height: Style.space(36)
+            Button {
+              anchors.fill: parent
+              text: "Orange"
+              tooltipText: "Diplomatic citrus"
+              bordered: true
+              leftAlign: true
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 1
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
+              onClicked: root.doAction("orange")
+            }
           }
-          Button {
+          Item {
             width: parent.width
-            text: "Soak"
-            tooltipText: "Send it to the river"
-            leftAlign: true
-            foreground: root.fg
-            fontFamily: root.fontFamily
-            hasCursor: root.cursorActive && root.cursorIndex === 2
-            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
-            onClicked: root.doAction("soak")
+            height: Style.space(36)
+            Button {
+              anchors.fill: parent
+              text: "Soak"
+              tooltipText: "Send it to the river"
+              bordered: true
+              leftAlign: true
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 2
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
+              onClicked: root.doAction("soak")
+            }
           }
-          Button {
+          Item {
             width: parent.width
-            text: "Wisdom"
-            tooltipText: "A one-liner"
-            leftAlign: true
-            foreground: root.fg
-            fontFamily: root.fontFamily
-            hasCursor: root.cursorActive && root.cursorIndex === 3
-            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
-            onClicked: root.doAction("wisdom")
+            height: Style.space(36)
+            Button {
+              anchors.fill: parent
+              text: "Wisdom"
+              tooltipText: "A one-liner"
+              bordered: true
+              leftAlign: true
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === 3
+              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
+              onClicked: root.doAction("wisdom")
+            }
           }
         }
 

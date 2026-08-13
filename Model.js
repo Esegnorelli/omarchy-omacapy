@@ -261,6 +261,8 @@ function wisdom(state, load, ts) {
   state.bond += 0.5
   state.zen = clamp(state.zen + 3, 0, 100)
   state.lastWisdom = nextWisdom(state)
+  state.lastAction = "wisdom"
+  state.lastActionMs = ts
   state.toast = "wisdom dispensed"
   state.mood = deriveMood(state, load, ts)
   return state
