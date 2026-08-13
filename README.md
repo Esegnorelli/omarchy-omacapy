@@ -1,12 +1,12 @@
 # OmaCapy
 
-![OmaCapy lounge](preview.png)
+![OmaCapy](preview.png)
 
-A **capybara roommate** for your [Omarchy](https://omarchy.org/) bar.
+**Computers can be fun.**
 
-Click the badge to open the lounge. Pet it. Feed it oranges. Dunk it in an imaginary river. Collect unserious wisdom. When your machine fries, the rodent looks fried too.
+A capybara roommate for your [Omarchy](https://omarchy.org/) bar. It climbs out of the badge like an old office assistant: looks at the compile, offers a soak, believes in oranges.
 
-Because computers should be useful **and** a little ridiculous.
+Click the badge. Pet it. Feed it. Dunk it in an imaginary river. Collect unserious wisdom. When the machine fries, the rodent looks fried too.
 
 ## What you do
 
