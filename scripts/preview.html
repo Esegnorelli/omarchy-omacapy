@@ -78,7 +78,11 @@
       border-radius: 8px; font-size: 12px; border: 1px solid #353028;
     }
     .act.sel { background: #2a2218; border-color: #c98422; }
-    .quote { color: #cfc8bc; font-size: 11px; line-height: 1.45; }
+    .quote {
+      margin-top: 8px; padding: 10px 12px; border-radius: 8px;
+      background: #2a2218; color: #cfc8bc; font-size: 11px; line-height: 1.45;
+    }
+    .hint { margin-top: 8px; color: #8b8680; font-size: 10px; }
   </style>
 </head>
 <body>
@@ -100,6 +104,7 @@
           <div class="title">OmaCapy</div>
           <div class="mood">CHILL</div>
           <div class="meta">visitor  ·  CPU 0.42</div>
+          <div class="meta">Sits next to the clock. Pet, feed, soak, or ask for omakase wisdom.</div>
         </div>
       </div>
       <div class="stats">
@@ -107,9 +112,11 @@
         <div class="stat"><div class="k">SNACKS</div><div class="v">58%</div><div class="track"><div class="fill" style="width:58%"></div></div></div>
         <div class="stat"><div class="k">ZEN</div><div class="v">80%</div><div class="track"><div class="fill" style="width:80%"></div></div></div>
       </div>
+      <div class="hint">They fade slowly. Night restores zen. High CPU load fries it.</div>
       <div class="rule"></div>
+      <div class="sec">CARE</div>
       <div class="acts">
-        <div class="act sel">Pet</div>
+        <div class="act sel">Pet  ·  1</div>
         <div class="act">Orange</div>
         <div class="act">Soak</div>
         <div class="act">Wisdom</div>
@@ -120,6 +127,7 @@
       <div class="sides">
         <span>Left</span><span class="on">Center</span><span>Right</span>
       </div>
+      <div class="hint">p pet  ·  o orange  ·  s soak  ·  w wisdom</div>
     </section>
   </div>
 </body>

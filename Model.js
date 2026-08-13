@@ -263,7 +263,7 @@ function wisdom(state, load, ts) {
   state.lastWisdom = nextWisdom(state)
   state.lastAction = "wisdom"
   state.lastActionMs = ts
-  state.toast = "wisdom dispensed"
+  state.toast = ""
   state.mood = deriveMood(state, load, ts)
   return state
 }
@@ -370,11 +370,52 @@ function meters(state) {
 
 function actions() {
   return [
-    { id: "pet", label: "Pet", detail: "The official hello", icon: "✋" },
-    { id: "orange", label: "Orange", detail: "Diplomatic citrus", icon: "🍊" },
-    { id: "soak", label: "Soak", detail: "Send it to the river", icon: "💧" },
-    { id: "wisdom", label: "Wisdom", detail: "A one-liner", icon: "💬" },
+    { id: "pet", label: "Pet", detail: "The official hello", icon: "✋", key: "p" },
+    { id: "orange", label: "Orange", detail: "Diplomatic citrus", icon: "🍊", key: "o" },
+    { id: "soak", label: "Soak", detail: "Send it to the river", icon: "💧", key: "s" },
+    { id: "wisdom", label: "Wisdom", detail: "A one-liner", icon: "💬", key: "w" },
   ]
+}
+
+function actionCount(state, id) {
+  state = state || {}
+  if (id === "pet") return Math.max(0, Number(state.pets) || 0)
+  if (id === "orange") return Math.max(0, Number(state.oranges) || 0)
+  if (id === "soak") return Math.max(0, Number(state.soaks) || 0)
+  return 0
+}
+
+function actionButtonLabel(state, action) {
+  var label = (action && action.label) || ""
+  var n = actionCount(state, action && action.id)
+  if (!n || (action && action.id) === "wisdom") return label
+  return label + "  ·  " + n
+}
+
+function actionTooltip(action) {
+  var detail = (action && action.detail) || ""
+  var key = (action && action.key) || ""
+  if (detail && key) return detail + "  ·  " + key
+  return detail || key
+}
+
+function lastActionLine(state) {
+  state = state || {}
+  var act = String(state.lastAction || "")
+  if (act === "pet") return "just petted"
+  if (act === "orange") return "just fed"
+  if (act === "soak") return "just soaked"
+  if (act === "wisdom") return "just spoke"
+  return ""
+}
+
+function textKeyAction(text) {
+  var t = String(text || "").toLowerCase()
+  if (t === "p" || t === "1") return "pet"
+  if (t === "o" || t === "2") return "orange"
+  if (t === "s" || t === "3") return "soak"
+  if (t === "w" || t === "4") return "wisdom"
+  return ""
 }
 
 function normalizeSide(side) {
@@ -401,6 +442,10 @@ function actionFx(actionId) {
 
 function shortcutHint() {
   return "Badge: click lounge · mid-click pet · right-click wisdom · scroll pet / orange"
+}
+
+function loungeHint() {
+  return "p pet  ·  o orange  ·  s soak  ·  w wisdom"
 }
 
 function meterHint() {
@@ -433,10 +478,16 @@ if (typeof module !== "undefined") {
     tooltip: tooltip,
     meters: meters,
     actions: actions,
+    actionCount: actionCount,
+    actionButtonLabel: actionButtonLabel,
+    actionTooltip: actionTooltip,
+    lastActionLine: lastActionLine,
+    textKeyAction: textKeyAction,
     normalizeSide: normalizeSide,
     sideOptions: sideOptions,
     actionFx: actionFx,
     shortcutHint: shortcutHint,
+    loungeHint: loungeHint,
     meterHint: meterHint,
     emptyWisdom: emptyWisdom,
     WISDOM: WISDOM,

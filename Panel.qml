@@ -178,6 +178,20 @@ Panel {
     doAction(actions[cursorIndex].id)
   }
 
+  function handleTextKey(text) {
+    var id = Model.textKeyAction(text)
+    if (!id) return
+    var i
+    for (i = 0; i < actions.length; i++) {
+      if (actions[i].id === id) {
+        cursorActive = true
+        cursorIndex = i
+        break
+      }
+    }
+    doAction(id)
+  }
+
   onOpenedChanged: {
     if (opened) {
       refreshLoad()
@@ -267,7 +281,7 @@ Panel {
 
   Timer {
     id: toastFade
-    interval: 1800
+    interval: 2200
     running: false
     repeat: false
     onTriggered: root.toastOpacity = 0
@@ -368,15 +382,23 @@ Panel {
       onActivateRequested: if (root.cursorActive) root.activateSelected()
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
+      onTextKey: function(t) { root.handleTextKey(t) }
 
-      Column {
-        id: column
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        spacing: Style.space(14)
-        opacity: root.loungeOpacity
-        y: root.loungeSlide
+      Flickable {
+        id: loungeScroll
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: column.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        interactive: contentHeight > height
+
+        Column {
+          id: column
+          width: loungeScroll.width
+          spacing: Style.space(14)
+          opacity: root.loungeOpacity
+          y: root.loungeSlide
 
         Item {
           width: parent.width
@@ -459,6 +481,25 @@ Panel {
               font.family: root.fontFamily
               font.pixelSize: Style.font.bodySmall
             }
+
+            Text {
+              width: parent.width
+              text: root.meta.blurb
+              color: root.dim
+              wrapMode: Text.WordWrap
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            Text {
+              width: parent.width
+              visible: Model.lastActionLine(root.capy) !== ""
+              text: Model.lastActionLine(root.capy)
+              color: root.moodColor
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+              font.bold: true
+            }
           }
         }
 
@@ -509,87 +550,78 @@ Panel {
           }
         }
 
+        Text {
+          width: parent.width
+          text: Model.meterHint()
+          color: root.dim
+          wrapMode: Text.WordWrap
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.bodySmall
+        }
+
         PanelSeparator { foreground: root.fg }
 
         Column {
           width: parent.width
           spacing: Style.space(6)
 
-          Item {
-            width: parent.width
-            height: Style.space(36)
-            Button {
-              anchors.fill: parent
-              text: "Pet"
-              tooltipText: "The official hello"
-              bordered: true
-              leftAlign: true
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 0
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
-              onClicked: root.doAction("pet")
-            }
+          PanelSectionHeader {
+            text: "CARE"
+            foreground: root.fg
+            fontFamily: root.fontFamily
           }
-          Item {
-            width: parent.width
-            height: Style.space(36)
-            Button {
-              anchors.fill: parent
-              text: "Orange"
-              tooltipText: "Diplomatic citrus"
-              bordered: true
-              leftAlign: true
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 1
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
-              onClicked: root.doAction("orange")
-            }
-          }
-          Item {
-            width: parent.width
-            height: Style.space(36)
-            Button {
-              anchors.fill: parent
-              text: "Soak"
-              tooltipText: "Send it to the river"
-              bordered: true
-              leftAlign: true
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 2
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
-              onClicked: root.doAction("soak")
-            }
-          }
-          Item {
-            width: parent.width
-            height: Style.space(36)
-            Button {
-              anchors.fill: parent
-              text: "Wisdom"
-              tooltipText: "A one-liner"
-              bordered: true
-              leftAlign: true
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 3
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
-              onClicked: root.doAction("wisdom")
+
+          Repeater {
+            model: root.actions
+            delegate: Item {
+              required property var modelData
+              required property int index
+              width: parent.width
+              height: Style.space(36)
+
+              Button {
+                anchors.fill: parent
+                text: Model.actionButtonLabel(root.capy, modelData)
+                tooltipText: Model.actionTooltip(modelData)
+                bordered: true
+                leftAlign: true
+                selected: root.capy.lastAction === modelData.id
+                foreground: root.fg
+                fontFamily: root.fontFamily
+                hasCursor: root.cursorActive && root.cursorIndex === index
+                onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = index } }
+                onClicked: root.doAction(modelData.id)
+              }
             }
           }
         }
 
-        Text {
+        Item {
           width: parent.width
-          visible: root.shownWisdom !== ""
-          text: root.shownWisdom
-          color: root.fg
-          opacity: 0.78 * root.wisdomOpacity
-          wrapMode: Text.WordWrap
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.bodySmall
+          height: visible ? feedbackBox.height : 0
+          visible: root.shownWisdom !== "" || (root.toastText !== "" && root.toastOpacity > 0)
+
+          Rectangle {
+            id: feedbackBox
+            width: parent.width
+            height: feedbackText.implicitHeight + Style.space(20)
+            radius: Style.cornerRadius
+            color: Style.selectedFillFor(root.fg, Color.accent)
+            opacity: root.shownWisdom !== "" ? root.wisdomOpacity : root.toastOpacity
+
+            Text {
+              id: feedbackText
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              anchors.margins: Style.space(10)
+              text: root.shownWisdom !== "" ? root.shownWisdom : root.toastText
+              color: root.fg
+              wrapMode: Text.WordWrap
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+          }
         }
 
         PanelSeparator { foreground: root.fg }
@@ -614,6 +646,7 @@ Panel {
                 required property var modelData
                 width: (parent.width - Style.space(16)) / 3
                 text: modelData.label
+                bordered: true
                 selected: root.panelSide === modelData.value
                 foreground: root.fg
                 fontFamily: root.fontFamily
@@ -621,6 +654,16 @@ Panel {
               }
             }
           }
+
+          Text {
+            width: parent.width
+            text: Model.loungeHint()
+            color: root.dim
+            wrapMode: Text.WordWrap
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+        }
         }
       }
     }

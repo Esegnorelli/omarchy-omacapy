@@ -16,6 +16,7 @@ Item {
   readonly property bool hyped: mood === "hyped"
   readonly property bool fried: mood === "fried"
   readonly property bool lonely: mood === "lonely"
+  readonly property bool meh: mood === "meh"
   readonly property bool compact: faceSize < 28
 
   readonly property url portrait: {
@@ -58,7 +59,7 @@ Item {
     id: stage
     anchors.fill: parent
     scale: root.popped ? 1.10 : 1
-    opacity: root.napping ? 0.9 : 1
+    opacity: root.napping ? 0.9 : ((root.lonely || root.meh) ? 0.84 : 1)
     transformOrigin: Item.Center
     Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
     Behavior on opacity { NumberAnimation { duration: 220 } }
@@ -150,6 +151,31 @@ Item {
           loops: Animation.Infinite
           PauseAnimation { duration: index * 140 }
           NumberAnimation { from: root.height * 0.2; to: -root.faceSize * 0.08; duration: 560; easing.type: Easing.OutCubic }
+        }
+      }
+    }
+
+    Repeater {
+      model: root.lonely && !root.compact ? 1 : 0
+      delegate: Text {
+        text: "?"
+        color: "#E8D5B0"
+        font.pixelSize: Math.max(10, root.faceSize * 0.2)
+        font.bold: true
+        opacity: 0
+        x: root.width * 0.72
+
+        SequentialAnimation on opacity {
+          running: true
+          loops: Animation.Infinite
+          NumberAnimation { from: 0; to: 0.85; duration: 240 }
+          PauseAnimation { duration: 280 }
+          NumberAnimation { from: 0.85; to: 0; duration: 700 }
+        }
+        SequentialAnimation on y {
+          running: true
+          loops: Animation.Infinite
+          NumberAnimation { from: root.height * 0.12; to: -root.faceSize * 0.12; duration: 1220; easing.type: Easing.OutCubic }
         }
       }
     }

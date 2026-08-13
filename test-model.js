@@ -113,6 +113,20 @@ assert("three sides", M.sideOptions().length === 3 && M.sideOptions()[1].value =
 assert("bar word", M.moodMeta("chill").bar === "Capy")
 assert("tooltip", M.tooltip(idle, 1.5).indexOf("OmaCapy") === 0)
 
+assert("action count pets", M.actionCount(p, "pet") === 1 && M.actionCount(p, "orange") === 0)
+assert("button label with count", M.actionButtonLabel(p, M.actions()[0]) === "Pet  ·  1")
+assert("button label wisdom", M.actionButtonLabel(p, M.actions()[3]) === "Wisdom")
+assert("tooltip has key", M.actionTooltip(M.actions()[2]).indexOf("s") !== -1)
+assert("last action pet", M.lastActionLine(p) === "just petted")
+assert("last action soak", M.lastActionLine(k) === "just soaked")
+assert("last action wisdom", M.lastActionLine(w1) === "just spoke")
+assert("last action empty", M.lastActionLine(idle) === "")
+assert("keys p/1", M.textKeyAction("p") === "pet" && M.textKeyAction("1") === "pet")
+assert("keys o/s/w", M.textKeyAction("O") === "orange" && M.textKeyAction("s") === "soak" && M.textKeyAction("4") === "wisdom")
+assert("keys ignore", M.textKeyAction("x") === "")
+assert("wisdom has no toast", w1.toast === "")
+assert("lounge hint", M.loungeHint().indexOf("p pet") === 0)
+
 if (fails) {
   console.log(fails + " failed")
   process.exit(1)
