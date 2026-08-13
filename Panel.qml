@@ -168,9 +168,18 @@ Panel {
     playActionMotion(id)
   }
 
-  function selectByDelta(delta) {
-    if (!actions.length) return
-    cursorIndex = Math.max(0, Math.min(actions.length - 1, cursorIndex + delta))
+  function selectByDelta(dx, dy) {
+    var n = actions.length
+    if (!n) return
+    var cols = 2
+    var i = Math.max(0, Math.min(n - 1, cursorIndex))
+    var col = i % cols
+    var row = Math.floor(i / cols)
+    var rows = Math.ceil(n / cols)
+    col = Math.max(0, Math.min(cols - 1, col + (dx || 0)))
+    row = Math.max(0, Math.min(rows - 1, row + (dy || 0)))
+    var next = row * cols + col
+    cursorIndex = Math.max(0, Math.min(n - 1, next))
   }
 
   function activateSelected() {
@@ -365,7 +374,7 @@ Panel {
     open: root.opened
     centerOnBar: root.panelSide === "center"
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(380))
+    contentWidth: panel.fittedContentWidth(Style.space(360))
     contentHeight: panel.fittedContentHeight(column.implicitHeight)
 
     PanelKeyCatcher {
@@ -376,8 +385,7 @@ Panel {
           root.cursorActive = true
           return
         }
-        if (dy !== 0) root.selectByDelta(dy)
-        else if (dx !== 0) root.selectByDelta(dx)
+        root.selectByDelta(dx, dy)
       }
       onActivateRequested: if (root.cursorActive) root.activateSelected()
       onCloseRequested: root.close()
@@ -396,274 +404,233 @@ Panel {
         Column {
           id: column
           width: loungeScroll.width
-          spacing: Style.space(14)
+          spacing: Style.space(10)
           opacity: root.loungeOpacity
           y: root.loungeSlide
 
-        Item {
-          width: parent.width
-          height: Math.max(heroFace.height, heroCopy.height)
+          Item {
+            width: parent.width
+            height: Math.max(heroFace.height, heroCopy.height)
 
-          Repeater {
-            model: root.particles
-            delegate: Rectangle {
-              required property var modelData
-              width: modelData.size
-              height: modelData.size
-              radius: modelData.size / 2
-              color: modelData.tint !== "" ? modelData.tint : Color.accent
-              opacity: 0
-              x: modelData.x
-              y: 36
+            Repeater {
+              model: root.particles
+              delegate: Rectangle {
+                required property var modelData
+                width: modelData.size
+                height: modelData.size
+                radius: modelData.size / 2
+                color: modelData.tint !== "" ? modelData.tint : Color.accent
+                opacity: 0
+                x: modelData.x
+                y: 28
 
-              SequentialAnimation on opacity {
-                running: true
-                PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 0; to: 0.9; duration: 80 }
-                NumberAnimation { from: 0.9; to: 0; duration: 520; easing.type: Easing.InQuad }
+                SequentialAnimation on opacity {
+                  running: true
+                  PauseAnimation { duration: modelData.delay }
+                  NumberAnimation { from: 0; to: 0.9; duration: 80 }
+                  NumberAnimation { from: 0.9; to: 0; duration: 520; easing.type: Easing.InQuad }
+                }
+                SequentialAnimation on y {
+                  running: true
+                  PauseAnimation { duration: modelData.delay }
+                  NumberAnimation { from: 36; to: 2; duration: 620; easing.type: Easing.OutCubic }
+                }
+                SequentialAnimation on x {
+                  running: true
+                  PauseAnimation { duration: modelData.delay }
+                  NumberAnimation { from: modelData.x; to: modelData.x + modelData.drift; duration: 620 }
+                }
               }
-              SequentialAnimation on y {
-                running: true
-                PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 42; to: 4; duration: 620; easing.type: Easing.OutCubic }
-              }
-              SequentialAnimation on x {
-                running: true
-                PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: modelData.x; to: modelData.x + modelData.drift; duration: 620 }
-              }
-            }
-          }
-
-          CapyFace {
-            id: heroFace
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            faceSize: Style.space(88)
-            mood: root.capy.mood
-            popped: root.actionPop
-            scale: root.heroScale
-            rotation: root.heroSpin
-            transformOrigin: Item.Center
-          }
-
-          Column {
-            id: heroCopy
-            anchors.left: heroFace.right
-            anchors.leftMargin: Style.space(14)
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(4)
-
-            Text {
-              width: parent.width
-              text: "OmaCapy"
-              color: root.fg
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.title
-              font.bold: true
             }
 
-            Text {
-              width: parent.width
-              text: root.meta.title.toUpperCase()
-              color: root.moodColor
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              font.letterSpacing: 1.2
+            CapyFace {
+              id: heroFace
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              faceSize: Style.space(72)
+              mood: root.capy.mood
+              popped: root.actionPop
+              scale: root.heroScale
+              rotation: root.heroSpin
+              transformOrigin: Item.Center
             }
 
-            Text {
-              width: parent.width
-              text: root.rank + "  ·  CPU " + root.loadAvg.toFixed(2)
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
-            }
-
-            Text {
-              width: parent.width
-              text: root.meta.blurb
-              color: root.dim
-              wrapMode: Text.WordWrap
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
-            }
-
-            Text {
-              width: parent.width
-              visible: Model.lastActionLine(root.capy) !== ""
-              text: Model.lastActionLine(root.capy)
-              color: root.moodColor
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
-              font.bold: true
-            }
-          }
-        }
-
-        Row {
-          width: parent.width
-          spacing: Style.space(18)
-
-          Repeater {
-            model: root.meters
-            delegate: Column {
-              required property var modelData
-              width: (parent.width - Style.space(36)) / 3
+            Column {
+              id: heroCopy
+              anchors.left: heroFace.right
+              anchors.leftMargin: Style.space(12)
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
               spacing: Style.space(5)
 
+              Row {
+                width: parent.width
+                spacing: Style.space(8)
+
+                Text {
+                  text: "OmaCapy"
+                  color: root.fg
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.title
+                  font.bold: true
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                  text: root.meta.title.toUpperCase()
+                  color: root.moodColor
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
+                  font.letterSpacing: 1.1
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+              }
+
               Text {
-                text: modelData.label.toUpperCase()
+                width: parent.width
+                text: root.rank + "  ·  CPU " + root.loadAvg.toFixed(2)
+                  + (Model.lastActionLine(root.capy) !== "" ? "  ·  " + Model.lastActionLine(root.capy) : "")
                 color: root.dim
+                elide: Text.ElideRight
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
-                font.letterSpacing: 1
               }
 
-              Text {
-                text: Math.round(modelData.value) + "%"
-                color: root.fg
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.title
-                font.bold: true
-              }
+              Repeater {
+                model: root.meters
+                delegate: Item {
+                  required property var modelData
+                  width: heroCopy.width
+                  height: Style.space(14)
 
-              Rectangle {
-                width: parent.width
-                height: Style.space(4)
-                radius: height / 2
-                color: Style.selectedFillFor(root.fg, Color.accent)
+                  Text {
+                    id: meterLabel
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: modelData.label.toUpperCase()
+                    color: root.dim
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.letterSpacing: 0.6
+                  }
 
-                Rectangle {
-                  width: parent.width * (modelData.value / 100)
-                  height: parent.height
-                  radius: parent.radius
-                  color: Color.accent
-                  Behavior on width {
-                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                  Text {
+                    id: meterValue
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Math.round(modelData.value) + "%"
+                    color: root.fg
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                  }
+
+                  Rectangle {
+                    anchors.left: meterLabel.right
+                    anchors.leftMargin: Style.space(8)
+                    anchors.right: meterValue.left
+                    anchors.rightMargin: Style.space(8)
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: Style.space(4)
+                    radius: height / 2
+                    color: Style.selectedFillFor(root.fg, Color.accent)
+
+                    Rectangle {
+                      width: parent.width * (modelData.value / 100)
+                      height: parent.height
+                      radius: parent.radius
+                      color: Color.accent
+                      Behavior on width {
+                        NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                      }
+                    }
                   }
                 }
               }
             }
           }
-        }
 
-        Text {
-          width: parent.width
-          text: Model.meterHint()
-          color: root.dim
-          wrapMode: Text.WordWrap
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.bodySmall
-        }
+          Grid {
+            id: careGrid
+            width: parent.width
+            columns: 2
+            columnSpacing: Style.space(6)
+            rowSpacing: Style.space(6)
 
-        PanelSeparator { foreground: root.fg }
+            Repeater {
+              model: root.actions
+              delegate: Item {
+                required property var modelData
+                required property int index
+                width: (careGrid.width - careGrid.columnSpacing) / 2
+                height: Style.space(36)
 
-        Column {
-          width: parent.width
-          spacing: Style.space(6)
-
-          PanelSectionHeader {
-            text: "CARE"
-            foreground: root.fg
-            fontFamily: root.fontFamily
-          }
-
-          Repeater {
-            model: root.actions
-            delegate: Item {
-              required property var modelData
-              required property int index
-              width: parent.width
-              height: Style.space(36)
-
-              Button {
-                anchors.fill: parent
-                text: Model.actionButtonLabel(root.capy, modelData)
-                tooltipText: Model.actionTooltip(modelData)
-                bordered: true
-                leftAlign: true
-                selected: root.capy.lastAction === modelData.id
-                foreground: root.fg
-                fontFamily: root.fontFamily
-                hasCursor: root.cursorActive && root.cursorIndex === index
-                onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = index } }
-                onClicked: root.doAction(modelData.id)
+                Button {
+                  anchors.fill: parent
+                  text: Model.actionButtonLabel(root.capy, modelData)
+                  tooltipText: Model.actionTooltip(modelData)
+                  bordered: true
+                  selected: root.capy.lastAction === modelData.id
+                  foreground: root.fg
+                  fontFamily: root.fontFamily
+                  hasCursor: root.cursorActive && root.cursorIndex === index
+                  onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = index } }
+                  onClicked: root.doAction(modelData.id)
+                }
               }
             }
           }
-        }
 
-        Item {
-          width: parent.width
-          height: visible ? feedbackBox.height : 0
-          visible: root.shownWisdom !== "" || (root.toastText !== "" && root.toastOpacity > 0)
-
-          Rectangle {
-            id: feedbackBox
+          Item {
             width: parent.width
-            height: feedbackText.implicitHeight + Style.space(20)
-            radius: Style.cornerRadius
-            color: Style.selectedFillFor(root.fg, Color.accent)
-            opacity: root.shownWisdom !== "" ? root.wisdomOpacity : root.toastOpacity
+            height: visible ? feedbackBox.height : 0
+            visible: root.shownWisdom !== "" || (root.toastText !== "" && root.toastOpacity > 0)
 
-            Text {
-              id: feedbackText
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.top: parent.top
-              anchors.margins: Style.space(10)
-              text: root.shownWisdom !== "" ? root.shownWisdom : root.toastText
-              color: root.fg
-              wrapMode: Text.WordWrap
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
+            Rectangle {
+              id: feedbackBox
+              width: parent.width
+              height: feedbackText.implicitHeight + Style.space(14)
+              radius: Style.cornerRadius
+              color: Style.selectedFillFor(root.fg, Color.accent)
+              opacity: root.shownWisdom !== "" ? root.wisdomOpacity : root.toastOpacity
+
+              Text {
+                id: feedbackText
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: Style.space(8)
+                text: root.shownWisdom !== "" ? root.shownWisdom : root.toastText
+                color: root.fg
+                wrapMode: Text.WordWrap
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+              }
             }
-          }
-        }
-
-        PanelSeparator { foreground: root.fg }
-
-        Column {
-          width: parent.width
-          spacing: Style.space(6)
-
-          PanelSectionHeader {
-            text: "SIDE"
-            foreground: root.fg
-            fontFamily: root.fontFamily
           }
 
           Row {
             width: parent.width
-            spacing: Style.space(8)
+            height: Style.space(30)
+            spacing: Style.space(6)
 
             Repeater {
               model: root.sides
               delegate: Button {
                 required property var modelData
-                width: (parent.width - Style.space(16)) / 3
+                width: (parent.width - Style.space(12)) / 3
+                height: parent.height
                 text: modelData.label
                 bordered: true
                 selected: root.panelSide === modelData.value
                 foreground: root.fg
                 fontFamily: root.fontFamily
+                fontSize: Style.font.bodySmall
                 onClicked: root.setSide(modelData.value)
               }
             }
           }
-
-          Text {
-            width: parent.width
-            text: Model.loungeHint()
-            color: root.dim
-            wrapMode: Text.WordWrap
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-          }
-        }
         }
       }
     }
