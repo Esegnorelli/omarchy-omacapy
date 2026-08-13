@@ -41,6 +41,8 @@ The badge word and the face change with the roommate:
 - **Right-click** — quick wisdom
 - **Scroll up / down** — pet / orange
 
+In the lounge, **Side** moves the badge and panel to the left, center, or right of the bar at any time.
+
 State lives in `~/.local/state/omarchy/omacapy.json`. Nothing leaves the machine.
 
 ## Install

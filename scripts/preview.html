@@ -66,6 +66,12 @@
 
     .rule { height: 1px; background: #ece8df14; margin: 14px 0 12px; }
     .sec { color: #8b8680; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .sides { display: flex; gap: 8px; margin-bottom: 2px; }
+    .sides span {
+      flex: 1; height: 28px; display: grid; place-items: center;
+      border-radius: 8px; border: 1px solid #353028; font-size: 11px; color: #cfc8bc;
+    }
+    .sides .on { background: #2a2218; border-color: #c98422; color: #f6d27a; }
     .act {
       height: 34px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 12px; border-radius: 8px; font-size: 12px;
@@ -100,6 +106,11 @@
         <div class="stat"><div class="k">HAPPINESS</div><div class="v">72%</div><div class="track"><div class="fill" style="width:72%"></div></div></div>
         <div class="stat"><div class="k">SNACKS</div><div class="v">58%</div><div class="track"><div class="fill" style="width:58%"></div></div></div>
         <div class="stat"><div class="k">ZEN</div><div class="v">80%</div><div class="track"><div class="fill" style="width:80%"></div></div></div>
+      </div>
+      <div class="rule"></div>
+      <div class="sec">SIDE</div>
+      <div class="sides">
+        <span>Left</span><span class="on">Center</span><span>Right</span>
       </div>
       <div class="rule"></div>
       <div class="sec">ACTIONS</div>

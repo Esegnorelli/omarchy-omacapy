@@ -361,6 +361,20 @@ function actions() {
   ]
 }
 
+function normalizeSide(side) {
+  var s = String(side || "").toLowerCase()
+  if (s === "left" || s === "center" || s === "right") return s
+  return "center"
+}
+
+function sideOptions() {
+  return [
+    { value: "left", label: "Left" },
+    { value: "center", label: "Center" },
+    { value: "right", label: "Right" },
+  ]
+}
+
 function actionFx(actionId) {
   if (actionId === "pet") return ["💕", "✨", "🫶", "💫"]
   if (actionId === "orange") return ["🍊", "✨", "🟡", "😋"]
@@ -403,6 +417,8 @@ if (typeof module !== "undefined") {
     tooltip: tooltip,
     meters: meters,
     actions: actions,
+    normalizeSide: normalizeSide,
+    sideOptions: sideOptions,
     actionFx: actionFx,
     shortcutHint: shortcutHint,
     meterHint: meterHint,

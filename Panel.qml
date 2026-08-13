@@ -39,10 +39,42 @@ Panel {
   readonly property color moodColor: capy.mood === "fried"
     ? (bar ? bar.urgent : Color.urgent)
     : Color.accent
+  readonly property string panelSide: Model.normalizeSide(setting("panelSide", "center"))
+  readonly property var sides: Model.sideOptions()
 
   function persist() {
     if (!hydrateDone) return
     stateFile.setText(Model.serializeState(capy))
+  }
+
+  function persistSettings(values) {
+    var entry = { id: root.moduleName }
+    var existing
+    for (existing in root.settings) if (existing !== "id") entry[existing] = root.settings[existing]
+    for (existing in values) entry[existing] = values[existing]
+    root.settings = entry
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
+      root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
+  function moveToSide(side) {
+    var payload = JSON.stringify({ section: side })
+    if (root.bar && root.bar.shell && root.bar.shell.pluginRegistry
+        && typeof root.bar.shell.pluginRegistry.moveBarWidget === "function") {
+      root.bar.shell.pluginRegistry.moveBarWidget(root.moduleName, { section: side })
+      return
+    }
+    if (!moveProc.running) {
+      moveProc.command = ["omarchy-shell", "shell", "moveBarWidget", root.moduleName, payload]
+      moveProc.running = true
+    }
+  }
+
+  function setSide(side) {
+    side = Model.normalizeSide(side)
+    if (side === root.panelSide) return
+    persistSettings({ panelSide: side })
+    moveToSide(side)
   }
 
   function applyLoad(raw) {
@@ -145,6 +177,11 @@ Panel {
     id: mkdirProc
     command: ["mkdir", "-p", root.stateDir]
     onExited: Qt.callLater(function() { stateFile.reload() })
+  }
+
+  Process {
+    id: moveProc
+    command: ["omarchy-shell", "shell", "moveBarWidget", root.moduleName, "{\"section\":\"center\"}"]
   }
 
   Process {
@@ -279,7 +316,7 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    centerOnBar: true
+    centerOnBar: root.panelSide === "center"
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(360))
     contentHeight: panel.fittedContentHeight(column.implicitHeight)
@@ -434,6 +471,27 @@ Panel {
         }
 
         PanelSeparator { foreground: root.fg }
+
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+
+          PanelSectionHeader {
+            text: "SIDE"
+            foreground: root.fg
+            fontFamily: root.fontFamily
+          }
+
+          ButtonGroup {
+            width: parent.width
+            options: root.sides
+            value: root.panelSide
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            focusable: false
+            onChanged: function(v) { root.setSide(v) }
+          }
+        }
 
         Column {
           width: parent.width
