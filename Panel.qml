@@ -16,11 +16,14 @@ Panel {
   readonly property string stateDir: stateHome + "/omarchy"
   readonly property string statePath: stateDir + "/omacapy.json"
   readonly property string langHintPath: stateDir + "/omacapy-lang"
+  readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || (home + "/.config")
+  readonly property string scanPath: configHome + "/omarchy/plugins/esegnorelli.omacapy/scan-focus.sh"
 
   property var capy: Model.defaultState(Date.now())
   property real loadAvg: 0
   property bool hydrateDone: false
   property string nvimHint: ""
+  property string focusProcs: ""
   property string focusLangId: ""
   property var stack: []
   property int frame: 0
@@ -69,7 +72,7 @@ Panel {
   }
 
   function resolveFocus() {
-    var lang = Model.detectLanguage(winTitle, winApp, nvimHint)
+    var lang = Model.detectLanguage(winTitle, winApp, nvimHint, focusProcs)
     var id = lang ? lang.id : ""
     if (id !== focusLangId) focusLangId = id
     stack = Model.stackRows(capy, focusLangId)
@@ -156,6 +159,8 @@ Panel {
   Component.onCompleted: {
     mkdirProc.running = true
     refreshLoad()
+    if (!scanProc.running) scanProc.running = true
+    if (!hintProc.running) hintProc.running = true
   }
 
   implicitWidth: button.implicitWidth
@@ -214,6 +219,19 @@ Panel {
     }
   }
 
+  Process {
+    id: scanProc
+    command: ["sh", root.scanPath]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var next = String(text || "").replace(/\n/g, " ").trim()
+        if (next !== "") root.focusProcs = next
+        root.resolveFocus()
+      }
+    }
+  }
+
   // world tick
   Timer {
     interval: 15000
@@ -231,6 +249,7 @@ Panel {
     repeat: true
     onTriggered: {
       if (!hintProc.running) hintProc.running = true
+      if (!scanProc.running) scanProc.running = true
       root.resolveFocus()
     }
   }
@@ -514,7 +533,7 @@ Panel {
           Text {
             width: parent.width
             visible: root.stack.length === 0
-            text: "Open a .py / .rs / .go file. In nvim, source nvim/omacapy.lua so the badge follows the buffer."
+            text: "Open a .py / .rs / .go file, or focus OpenCode / Claude / Grok. In nvim, source nvim/omacapy.lua so the badge follows the buffer."
             color: root.bar.foreground
             opacity: 0.55
             wrapMode: Text.WordWrap

@@ -4,7 +4,7 @@
 
 **The playful roommate Omarchy didn't ship.**
 
-The badge follows the language you are in — Python, Rust, Go, the same icons as nvim — and a thin bar shows how much you have practiced it. Click the lounge for today's / this week's / lifetime hours. The capybara is still there when you are not in a file.
+The badge follows the language you are in — Python, Rust, Go, the same icons as nvim — or **AI** when the focus is OpenCode, Claude, Grok, Codex, ChatGPT, and the rest. A thin bar shows how much you have practiced that stack. Click the lounge for today's / this week's / lifetime hours. The capybara is still there when you are not in a file.
 
 Computers can be useful **and** fun.
 

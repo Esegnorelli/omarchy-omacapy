@@ -513,6 +513,11 @@ var LANGUAGES = [
   L("astro", "Astro", "astro", "\ue6b3", ["astro"], ["astro"]),
   L("terraform", "Terraform", "tf", "\ue69a", ["tf", "tfvars"], ["terraform"]),
   L("graphql", "GraphQL", "gql", "\ue662", ["graphql", "gql"], ["graphql"]),
+  L("ai", "AI", "ai", "\u2726", [], [
+    "ai", "opencode", "claude", "chatgpt", "grok", "hermes", "codex",
+    "copilot", "gemini", "perplexity", "aider", "ollama", "lmstudio",
+    "windsurf", "cursor", "goose",
+  ]),
   L("other", "Other", "dev", "\ue795", [], ["other", "text"]),
 ]
 
@@ -555,7 +560,37 @@ function extractFilename(title) {
   return String(parts[parts.length - 1] || "").trim()
 }
 
-function detectLanguage(title, appId, hint) {
+function isAiBlob(text) {
+  var s = String(text || "").toLowerCase()
+  if (!s) return false
+  if (s.indexOf("chatgpt") !== -1 || s.indexOf("chat.openai") !== -1) return true
+  if (s.indexOf("claude") !== -1) return true
+  if (s.indexOf("opencode") !== -1) return true
+  if (s.indexOf("perplexity") !== -1) return true
+  if (s.indexOf("copilot") !== -1) return true
+  if (s.indexOf("gemini") !== -1) return true
+  if (s.indexOf("lmstudio") !== -1 || s.indexOf("lm studio") !== -1) return true
+  if (s.indexOf("windsurf") !== -1) return true
+  if (s.indexOf("ollama") !== -1) return true
+  if (/\b(grok|hermes|codex|aider|goose)\b/.test(s)) return true
+  if (/\bcursor\b/.test(s) && (s.indexOf("cursor") === 0 || s.indexOf(".") !== -1)) return true
+  return false
+}
+
+function hasProc(procs, name) {
+  var list = String(procs || "").toLowerCase().split(/[\s,]+/)
+  var n = String(name || "").toLowerCase()
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] === n || list[i].indexOf(n) !== -1) return true
+  }
+  return false
+}
+
+function detectLanguage(title, appId, hint, procs) {
+  var raw = String(title || "")
+  var app = String(appId || "")
+  var blob = raw + " " + app + " " + String(procs || "")
+
   var fromHint = lookupToken(hint)
   if (!fromHint && hint) {
     var hintName = extractFilename(hint)
@@ -563,25 +598,29 @@ function detectLanguage(title, appId, hint) {
     if (!fromHint && hintName.indexOf(".") !== -1)
       fromHint = lookupToken(hintName.split(".").pop())
   }
-  if (fromHint) return fromHint
 
   var name = extractFilename(title)
   var lower = name.toLowerCase()
-  if (LANG_BY_ALIAS[lower]) return LANG_BY_ALIAS[lower]
-
   var ext = ""
   var dot = lower.lastIndexOf(".")
   if (dot > 0 && dot < lower.length - 1) ext = lower.slice(dot + 1)
-  if (ext && LANG_BY_EXT[ext]) return LANG_BY_EXT[ext]
+  var fromFile = null
+  if (LANG_BY_ALIAS[lower]) fromFile = LANG_BY_ALIAS[lower]
+  else if (ext && LANG_BY_EXT[ext]) fromFile = LANG_BY_EXT[ext]
+  else if (/\bDockerfile\b/i.test(raw) || /\bContainerfile\b/i.test(raw)) fromFile = LANG_BY_ID.docker
+  else if (/\bMakefile\b/i.test(raw)) fromFile = LANG_BY_ID.make
+  else if (/\bCargo\.toml\b/i.test(raw)) fromFile = LANG_BY_ID.rust
 
-  var raw = String(title || "")
-  if (/\bDockerfile\b/i.test(raw) || /\bContainerfile\b/i.test(raw)) return LANG_BY_ID.docker
-  if (/\bMakefile\b/i.test(raw)) return LANG_BY_ID.make
-  if (/\bCargo\.toml\b/i.test(raw)) return LANG_BY_ID.rust
+  if (fromFile && fromFile.id !== "ai") return fromFile
 
-  var app = String(appId || "").toLowerCase()
+  var nvimLive = hasProc(procs, "nvim") || hasProc(procs, "vim")
+  if (fromHint && fromHint.id !== "ai" && nvimLive) return fromHint
+
+  if (isAiBlob(blob) || hasProc(procs, "opencode") || hasProc(procs, "claude")
+      || hasProc(procs, "grok") || hasProc(procs, "hermes") || hasProc(procs, "codex"))
+    return LANG_BY_ID.ai
+
   if (app.indexOf("jetbrains") !== -1 && ext) return lookupToken(ext)
-
   return null
 }
 
