@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "author": "Esegnorelli",
   "license": "MIT",
   "description": "Language or AI on the Omarchy bar, practice hours, and your GitHub inbox via gh. PRs, review requests, notifications. No extra accounts.",

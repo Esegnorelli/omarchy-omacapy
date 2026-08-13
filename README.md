@@ -6,7 +6,7 @@ Language and AI practice on the [Omarchy](https://omarchy.org/) bar.
 
 The badge follows what you are in — Python, Rust, Go (nvim-style icons) or **AI** when the focus is OpenCode, Claude, Grok, Codex, ChatGPT. A thin bar is how much you have practiced that stack. Click for today / this week / lifetime hours.
 
-GitHub uses the `gh` CLI already on the machine (`gh auth login`). The plugin never stores a token.
+GitHub uses the `gh` CLI already on the machine (`gh auth login`). The plugin never stores a token. The stack lists languages from your repos (and popular ones if `gh` is offline).
 
 ## How it sees the file
 

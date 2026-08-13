@@ -118,7 +118,7 @@ function L(id, name, shortName, icon, extensions, aliases) {
 }
 
 var LANGUAGES = [
-  L("python", "Python", "py", "\ue73c", ["py", "pyw", "pyi"], ["python", "pyproject.toml", "requirements.txt"]),
+  L("python", "Python", "py", "\ue73c", ["py", "pyw", "pyi"], ["python", "pyproject.toml", "requirements.txt", "jupyter notebook"]),
   L("rust", "Rust", "rs", "\ue7a8", ["rs"], ["rust", "cargo.toml", "cargo.lock"]),
   L("go", "Go", "go", "\ue724", ["go"], ["go.mod", "go.sum"]),
   L("javascript", "JavaScript", "js", "\ue781", ["js", "mjs", "cjs"], ["javascript", "node", "package.json"]),
@@ -134,10 +134,10 @@ var LANGUAGES = [
   L("cpp", "C++", "c++", "\ue61d", ["cpp", "cc", "cxx", "hpp", "hh"], ["cpp", "c++", "cplusplus", "cmakelists.txt"]),
   L("csharp", "C#", "c#", "\ue77f", ["cs"], ["cs", "csharp"]),
   L("html", "HTML", "html", "\ue736", ["html", "htm"], ["html"]),
-  L("css", "CSS", "css", "\ue749", ["css", "scss", "sass", "less"], ["css", "scss"]),
+  L("css", "CSS", "css", "\ue749", ["css", "scss", "sass", "less"], ["css", "scss", "sass", "less"]),
   L("json", "JSON", "json", "\ue60b", ["json", "jsonc"], ["json"]),
   L("markdown", "Markdown", "md", "\ue73e", ["md", "mdx"], ["markdown"]),
-  L("shell", "Shell", "sh", "\ue795", ["sh", "bash", "zsh", "fish"], ["sh", "bash", "zsh", "fish"]),
+  L("shell", "Shell", "sh", "\ue795", ["sh", "bash", "zsh", "fish"], ["sh", "bash", "zsh", "fish", "shell"]),
   L("qml", "QML", "qml", "\ue6ae", ["qml"], ["qml"]),
   L("zig", "Zig", "zig", "\ue6a9", ["zig"], ["zig"]),
   L("elixir", "Elixir", "ex", "\ue62d", ["ex", "exs"], ["elixir"]),
@@ -146,12 +146,17 @@ var LANGUAGES = [
   L("dart", "Dart", "dart", "\ue798", ["dart"], ["dart"]),
   L("svelte", "Svelte", "svelte", "\ue697", ["svelte"], ["svelte"]),
   L("vue", "Vue", "vue", "\ue6a0", ["vue"], ["vue"]),
-  L("sql", "SQL", "sql", "\ue706", ["sql"], ["sql"]),
+  L("sql", "SQL", "sql", "\ue706", ["sql"], ["sql", "plpgsql", "plsql", "sqlpl"]),
+  L("r", "R", "r", "\ue68a", ["r", "rmd"], ["r"]),
+  L("scala", "Scala", "scala", "\ue737", ["scala", "sc"], ["scala"]),
+  L("perl", "Perl", "pl", "\ue769", ["pl", "pm"], ["perl"]),
+  L("powershell", "PowerShell", "ps", "\ue70c", ["ps1", "psm1"], ["powershell"]),
+  L("objc", "Objective-C", "objc", "\ue61e", ["m", "mm"], ["objective-c", "objc"]),
   L("toml", "TOML", "toml", "\ue6b2", ["toml"], ["toml"]),
   L("yaml", "YAML", "yml", "\ue6a8", ["yml", "yaml"], ["yaml", "yml"]),
   L("docker", "Docker", "docker", "\ue7b0", [], ["dockerfile", "containerfile"]),
   L("make", "Make", "make", "\ue673", [], ["makefile", "gnumakefile"]),
-  L("vim", "Vim", "vim", "\ue7c5", ["vim"], ["vim", "viml"]),
+  L("vim", "Vim", "vim", "\ue7c5", ["vim"], ["vim", "viml", "vim script", "vimscript"]),
   L("nix", "Nix", "nix", "\uf313", ["nix"], ["nix"]),
   L("astro", "Astro", "astro", "\ue6b3", ["astro"], ["astro"]),
   L("terraform", "Terraform", "tf", "\ue69a", ["tf", "tfvars"], ["terraform"]),
@@ -320,16 +325,89 @@ function formatDuration(ms) {
   return rh ? d + "d " + rh + "h" : d + "d"
 }
 
-function stackRows(state, focusId) {
+var POPULAR_IDS = [
+  "python", "javascript", "typescript", "java", "csharp", "cpp",
+  "go", "rust", "php", "ruby", "kotlin", "swift", "html", "css",
+  "shell", "sql", "ai",
+]
+
+function mapGithubLanguage(name) {
+  var n = String(name || "").trim()
+  if (!n) return null
+  var special = {
+    "c++": "cpp",
+    "c#": "csharp",
+    "objective-c": "objc",
+    "jupyter notebook": "python",
+    "vim script": "vim",
+    "vimscript": "vim",
+    "plpgsql": "sql",
+    "plsql": "sql",
+    "dockerfile": "docker",
+  }
+  var key = n.toLowerCase()
+  if (special[key]) return langById(special[key])
+  return lookupToken(n) || lookupToken(key)
+}
+
+function githubLanguageShare(github) {
+  var map = {}
+  var total = 0
+  var list = (github && github.languages) || []
+  var i
+  for (i = 0; i < list.length; i++) {
+    var item = list[i] || {}
+    var meta = mapGithubLanguage(item.name) || langById(item.id)
+    if (!meta) continue
+    var bytes = Math.max(0, Number(item.bytes) || 0)
+    if (!map[meta.id]) map[meta.id] = { id: meta.id, bytes: 0 }
+    map[meta.id].bytes += bytes
+    total += bytes
+  }
+  var out = []
+  var ids = Object.keys(map)
+  for (i = 0; i < ids.length; i++) {
+    var id = ids[i]
+    out.push({
+      id: id,
+      bytes: map[id].bytes,
+      share: total > 0 ? map[id].bytes / total : 0,
+    })
+  }
+  out.sort(function(a, b) { return b.bytes - a.bytes })
+  return out
+}
+
+function stackRows(state, focusId, github) {
   state = normalizeState(state)
   var langs = state.languages || {}
-  var ids = Object.keys(langs)
-  if (focusId && langById(focusId) && !langs[focusId]) ids.push(focusId)
+  var seen = {}
+  var ids = []
+  function addId(id) {
+    if (!id || seen[id] || !langById(id)) return
+    seen[id] = true
+    ids.push(id)
+  }
+  addId(focusId)
+  var localIds = Object.keys(langs)
+  var i
+  for (i = 0; i < localIds.length; i++) addId(localIds[i])
+  var ghShare = githubLanguageShare(github)
+  for (i = 0; i < ghShare.length; i++) addId(ghShare[i].id)
+  if (ghShare.length === 0) {
+    for (i = 0; i < POPULAR_IDS.length; i++) addId(POPULAR_IDS[i])
+  }
+
+  var ghById = {}
+  for (i = 0; i < ghShare.length; i++) ghById[ghShare[i].id] = ghShare[i]
+
   var rows = []
-  for (var i = 0; i < ids.length; i++) {
+  for (i = 0; i < ids.length; i++) {
     var id = ids[i]
     var meta = langById(id) || langById("other")
     var stat = rollLangWindows(langs[id], nowMs())
+    var gh = ghById[id]
+    var ghPct = gh ? Math.round(gh.share * 100) : 0
     rows.push({
       id: id,
       name: meta.name,
@@ -339,8 +417,10 @@ function stackRows(state, focusId) {
       todayMs: stat.todayMs,
       weekMs: stat.weekMs,
       lastSeenMs: stat.lastSeenMs,
-      score: practiceScore(stat.ms),
+      score: gh ? Math.max(practiceScore(stat.ms), ghPct) : practiceScore(stat.ms),
       active: id === focusId,
+      onGithub: !!gh,
+      githubPct: ghPct,
       todayText: formatDuration(stat.todayMs),
       weekText: formatDuration(stat.weekMs),
       totalText: formatDuration(stat.ms),
@@ -348,9 +428,11 @@ function stackRows(state, focusId) {
   }
   rows.sort(function(a, b) {
     if (a.active !== b.active) return a.active ? -1 : 1
-    return b.ms - a.ms
+    if ((b.ms > 0) !== (a.ms > 0)) return b.ms > 0 ? 1 : -1
+    if (b.ms !== a.ms) return b.ms - a.ms
+    return b.githubPct - a.githubPct
   })
-  return rows.slice(0, 8)
+  return rows.slice(0, 10)
 }
 
 function badgeLang(state, focusId) {
@@ -395,6 +477,7 @@ function emptyGithub() {
     prs: [],
     assigned: [],
     notices: [],
+    languages: [],
   }
 }
 
@@ -458,6 +541,7 @@ function parseGithub(raw) {
       prs: cleanItems(prs.items),
       assigned: cleanItems(assigned.items),
       notices: cleanItems(notifs.items),
+      languages: Array.isArray(d.languages) ? d.languages : [],
     }
   } catch (e) {
     empty.error = "bad json"
@@ -526,6 +610,9 @@ if (typeof module !== "undefined") {
     parseGithub: parseGithub,
     githubBadgeCount: githubBadgeCount,
     githubRows: githubRows,
+    mapGithubLanguage: mapGithubLanguage,
+    githubLanguageShare: githubLanguageShare,
+    POPULAR_IDS: POPULAR_IDS,
     repoName: repoName,
     dayKey: dayKey,
     weekKey: weekKey,

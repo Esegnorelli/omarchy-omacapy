@@ -33,5 +33,9 @@ assigned=$(gh api "search/issues?q=is:open+assignee:@me&per_page=5" \
   --jq '{total:.total_count, items:[.items[]|{title:.title,url:.html_url}]}' 2>/dev/null) \
   || assigned='{"total":0,"items":[]}'
 
-printf '{"ok":true,"login":"%s","notifications":%s,"reviews":%s,"prs":%s,"assigned":%s}\n' \
-  "$login" "$notifs" "$review" "$mine" "$assigned"
+langs=$(gh api graphql -f query='query { viewer { repositories(first: 100, ownerAffiliations: OWNER, isFork: false, orderBy: {field: UPDATED_AT, direction: DESC}) { nodes { languages(first: 8, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name } } } } } } }' \
+  --jq '[.data.viewer.repositories.nodes[].languages.edges[]] | group_by(.node.name) | map({name:.[0].node.name, bytes:(map(.size)|add)}) | sort_by(-.bytes) | .[:15]' 2>/dev/null) \
+  || langs='[]'
+
+printf '{"ok":true,"login":"%s","notifications":%s,"reviews":%s,"prs":%s,"assigned":%s,"languages":%s}\n' \
+  "$login" "$notifs" "$review" "$mine" "$assigned" "$langs"

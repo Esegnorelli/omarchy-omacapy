@@ -77,6 +77,26 @@ var round = M.parseState(M.serializeState(s), 50000)
 assert("roundtrip practice", M.languageStat(round, "python").ms === 30000)
 assert("badge prefers focus", M.badgeLang(s, "ai").id === "ai")
 
+assert("gh lang ts", M.mapGithubLanguage("TypeScript").id === "typescript")
+assert("gh lang plpgsql", M.mapGithubLanguage("PLpgSQL").id === "sql")
+assert("gh lang jupyter", M.mapGithubLanguage("Jupyter Notebook").id === "python")
+assert("gh lang dockerfile", M.mapGithubLanguage("Dockerfile").id === "docker")
+
+var merged = M.stackRows(M.defaultState(1), "python", {
+  ok: true,
+  languages: [
+    { name: "TypeScript", bytes: 4000000 },
+    { name: "Python", bytes: 100000 },
+    { name: "QML", bytes: 20000 },
+  ],
+})
+assert("merge includes ts", merged.some(function(r) { return r.id === "typescript" && r.onGithub }))
+assert("merge includes qml", merged.some(function(r) { return r.id === "qml" && r.onGithub }))
+assert("focus first", merged[0].id === "python")
+
+var popular = M.stackRows(M.defaultState(1), "", { ok: false, languages: [] })
+assert("popular fallback", popular.some(function(r) { return r.id === "go" }) && popular.length >= 8)
+
 var gh = M.parseGithub(JSON.stringify({
   ok: true,
   login: "Esegnorelli",

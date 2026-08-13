@@ -56,13 +56,13 @@ Panel {
     var lang = Model.detectLanguage(winTitle, winApp, nvimHint, focusProcs)
     var id = lang ? lang.id : ""
     if (id !== focusLangId) focusLangId = id
-    stack = Model.stackRows(store, focusLangId)
+    stack = Model.stackRows(store, focusLangId, github)
   }
 
   function runTick() {
     resolveFocus()
     store = Model.tickPractice(store, focusLangId, Date.now())
-    stack = Model.stackRows(store, focusLangId)
+    stack = Model.stackRows(store, focusLangId, github)
     if (hydrateDone) persist()
   }
 
@@ -455,7 +455,9 @@ Panel {
                   Text {
                     width: parent.width * 0.55
                     horizontalAlignment: Text.AlignRight
-                    text: modelData.weekText + " wk · " + modelData.totalText
+                    text: modelData.onGithub
+                      ? (modelData.weekText + " · " + modelData.githubPct + "% gh")
+                      : (modelData.weekText + " wk · " + modelData.totalText)
                     color: root.bar.foreground
                     opacity: 0.7
                     font.family: root.bar.fontFamily
