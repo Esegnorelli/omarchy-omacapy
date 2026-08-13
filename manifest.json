@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "author": "Esegnorelli",
   "license": "MIT",
-  "description": "Your Omarchy bar shows the language — or AI tool — you are in, and how much you have practiced it. Capybara roommate still included. No accounts, no network.",
+  "description": "The language or AI tool you are in, plus practice hours, on the Omarchy bar. Nvim-style icons. No accounts, no network.",
   "kinds": [
     "bar-widget"
   ],
@@ -13,8 +13,8 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "OmaCapy",
-    "description": "Language or AI icon + practice hours. The roommate Omarchy didn't ship.",
+    "displayName": "Stack",
+    "description": "Language or AI icon plus practice hours.",
     "category": "Widgets",
     "allowMultiple": false,
     "defaultSection": "center"

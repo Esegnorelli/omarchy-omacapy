@@ -36,7 +36,7 @@ assert("nvim hint with nvim", M.detectLanguage("trabalho: ~", "ghostty", "python
 assert("stale hint ignored", M.detectLanguage("trabalho: ~", "firefox", "python", "firefox") === null)
 
 var idle = M.defaultState(1000)
-assert("v2 state", idle.version === 2 && idle.languages && typeof idle.languages === "object")
+assert("v3 state", idle.version === 3 && idle.languages && typeof idle.languages === "object")
 
 var s = M.tickPractice(idle, "python", 1000 + 15000)
 assert("practice adds 15s", M.languageStat(s, "python").ms === 15000)
@@ -44,6 +44,8 @@ s = M.tickPractice(s, "python", 1000 + 30000)
 assert("practice accumulates", M.languageStat(s, "python").ms === 30000)
 s = M.tickPractice(s, "rust", 1000 + 45000)
 assert("other lang isolated", M.languageStat(s, "python").ms === 30000 && M.languageStat(s, "rust").ms === 15000)
+s = M.tickPractice(s, "ai", 1000 + 60000)
+assert("ai isolated", M.languageStat(s, "ai").ms === 15000 && M.languageStat(s, "python").ms === 30000)
 
 var tiny = M.tickPractice(idle, "python", 1000 + 200)
 assert("ignores sub-second", M.languageStat(tiny, "python").ms === 0)
@@ -59,19 +61,21 @@ assert("format 5m", M.formatDuration(5 * 60000) === "5m")
 assert("format 90m", M.formatDuration(90 * 60000) === "1h 30m")
 
 var old = M.parseState(JSON.stringify({
-  version: 1,
+  version: 2,
   happiness: 40,
-  lastWisdom: "hi",
+  languages: { python: { ms: 90000, todayMs: 90000, weekMs: 90000 } },
 }), 2000)
-assert("migrates v1", old.version === 2 && old.happiness === 40 && old.lastWisdom === "hi")
-assert("migrates langs", old.languages && Object.keys(old.languages).length === 0)
+assert("migrates v2 langs", old.version === 3 && M.languageStat(old, "python").ms === 90000)
+assert("drops pet fields", old.happiness == null)
 
 var rows = M.stackRows(s, "python")
 assert("stack focuses python", rows[0].id === "python" && rows[0].active)
 assert("stack has rust", rows.some(function(r) { return r.id === "rust" }))
+assert("stack has ai", rows.some(function(r) { return r.id === "ai" }))
 
 var round = M.parseState(M.serializeState(s), 50000)
 assert("roundtrip practice", M.languageStat(round, "python").ms === 30000)
+assert("badge prefers focus", M.badgeLang(s, "ai").id === "ai")
 
 if (fails) {
   console.log(fails + " failed")
