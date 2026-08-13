@@ -4,9 +4,19 @@
 
 **The playful roommate Omarchy didn't ship.**
 
-It sits on the [Omarchy](https://omarchy.org/) bar next to clock and weather — same shell, same theme, zero extra packages. Pet it. Feed it oranges. Soak it. Collect omakase one-liners. When the machine fries, the rodent looks fried too.
+The badge follows the language you are in — Python, Rust, Go, the same icons as nvim — and a thin bar shows how much you have practiced it. Click the lounge for today's / this week's / lifetime hours. The capybara is still there when you are not in a file.
 
 Computers can be useful **and** fun.
+
+## Language badge
+
+OmaCapy reads the focused window title (VS Code, Cursor, Zed, JetBrains) and, optionally, a one-line hint from nvim.
+
+In nvim, source the hook so a Ghostty title like `trabalho: ~` still maps to the buffer:
+
+Copy `nvim/omacapy.lua` to `~/.config/nvim/plugin/omacapy.lua` (or `luafile` it from your config).
+
+Practice time only counts while a recognized language is focused. Idle terminals and browsers do not inflate the bar.
 
 ## What you do
 
@@ -41,7 +51,7 @@ The badge word and the face change with the roommate:
 - **Right-click** — quick wisdom
 - **Scroll up / down** — pet / orange
 
-State lives in `~/.local/state/omarchy/omacapy.json`. Nothing leaves the machine.
+State lives in `~/.local/state/omarchy/omacapy.json`. The nvim hook writes `~/.local/state/omarchy/omacapy-lang`. Nothing leaves the machine.
 
 ## Install
 

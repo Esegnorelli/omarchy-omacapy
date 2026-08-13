@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
 import "Model.js" as Model
@@ -14,10 +15,14 @@ Panel {
   readonly property string stateHome: Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")
   readonly property string stateDir: stateHome + "/omarchy"
   readonly property string statePath: stateDir + "/omacapy.json"
+  readonly property string langHintPath: stateDir + "/omacapy-lang"
 
   property var capy: Model.defaultState(Date.now())
   property real loadAvg: 0
   property bool hydrateDone: false
+  property string nvimHint: ""
+  property string focusLangId: ""
+  property var stack: []
   property int frame: 0
   property int cursorIndex: 0
   property bool cursorActive: false
@@ -34,6 +39,12 @@ Panel {
   readonly property var meters: Model.meters(capy)
   readonly property int animTempo: Model.barTempoMs(capy)
   readonly property var actions: Model.actions()
+  readonly property var toplevel: ToplevelManager.activeToplevel
+  readonly property string winTitle: toplevel ? (toplevel.title || "") : ""
+  readonly property string winApp: toplevel ? (toplevel.appId || "") : ""
+  readonly property var focusLang: Model.langById(focusLangId)
+  readonly property var focusStat: Model.languageStat(capy, focusLangId)
+  readonly property real focusScore: Model.practiceScore(focusStat.ms)
 
   function persist() {
     if (!hydrateDone) return
@@ -49,8 +60,26 @@ Panel {
       loadProc.running = true
   }
 
+  function applyHint(raw) {
+    var line = String(raw || "").trim()
+    var nl = line.indexOf("\n")
+    if (nl !== -1) line = line.slice(0, nl)
+    line = line.trim()
+    if (line !== nvimHint) nvimHint = line
+  }
+
+  function resolveFocus() {
+    var lang = Model.detectLanguage(winTitle, winApp, nvimHint)
+    var id = lang ? lang.id : ""
+    if (id !== focusLangId) focusLangId = id
+    stack = Model.stackRows(capy, focusLangId)
+  }
+
   function runTick() {
+    resolveFocus()
     capy = Model.tick(capy, loadAvg, Date.now())
+    capy = Model.tickPractice(capy, focusLangId, Date.now())
+    stack = Model.stackRows(capy, focusLangId)
     if (hydrateDone) persist()
   }
 
@@ -109,6 +138,10 @@ Panel {
     doAction(actions[cursorIndex].id)
   }
 
+  onWinTitleChanged: resolveFocus()
+  onWinAppChanged: resolveFocus()
+  onNvimHintChanged: resolveFocus()
+
   onOpenedChanged: {
     if (opened) {
       refreshLoad()
@@ -163,6 +196,24 @@ Panel {
     }
   }
 
+  FileView {
+    id: langHintFile
+    path: root.langHintPath
+    watchChanges: true
+    printErrors: false
+    onLoaded: root.applyHint(text())
+    onLoadFailed: root.applyHint("")
+  }
+
+  Process {
+    id: hintProc
+    command: ["cat", root.langHintPath]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyHint(text)
+    }
+  }
+
   // world tick
   Timer {
     interval: 15000
@@ -171,6 +222,16 @@ Panel {
     onTriggered: {
       root.refreshLoad()
       root.runTick()
+    }
+  }
+
+  Timer {
+    interval: 1500
+    running: true
+    repeat: true
+    onTriggered: {
+      if (!hintProc.running) hintProc.running = true
+      root.resolveFocus()
     }
   }
 
@@ -241,14 +302,14 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.meta.bar
+    text: root.focusLang ? root.focusLang.short : root.meta.bar
     labelVisible: false
-    active: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.capy.mood === "hyped" || root.actionPop
+    active: !!root.focusLang || root.capy.mood === "lonely" || root.capy.mood === "fried" || root.capy.mood === "hyped" || root.actionPop
     useActiveColor: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.actionPop
-    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(58)
+    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(root.focusLang ? 64 : 58)
     fixedHeight: root.bar && root.bar.vertical ? Style.space(36) : -1
     horizontalMargin: 6
-    tooltipText: Model.tooltip(root.capy, root.loadAvg)
+    tooltipText: Model.tooltip(root.capy, root.loadAvg, root.focusLangId)
     opacity: 0.88 + Math.min(0.12, Math.abs(root.barNudge) * 0.03)
     Behavior on opacity { NumberAnimation { duration: 80 } }
     onPressed: function(b) {
@@ -267,24 +328,51 @@ Panel {
       else root.doAction("orange")
     }
 
-    Row {
+    Column {
       anchors.centerIn: parent
-      spacing: Style.space(5)
-      CapyFace {
-        faceSize: Style.space(16)
-        mood: root.capy.mood
-        popped: root.actionPop
-        anchors.verticalCenter: parent.verticalCenter
-        y: root.barNudge * 0.4
+      spacing: 2
+
+      Row {
+        spacing: Style.space(5)
+        CapyFace {
+          visible: !root.focusLang
+          faceSize: Style.space(16)
+          mood: root.capy.mood
+          popped: root.actionPop
+          anchors.verticalCenter: parent.verticalCenter
+          y: root.barNudge * 0.4
+        }
+        Text {
+          visible: !!root.focusLang
+          text: root.focusLang ? root.focusLang.icon : ""
+          color: button.foreground
+          font.family: button.fontFamily
+          font.pixelSize: Style.font.title
+          anchors.verticalCenter: parent.verticalCenter
+        }
+        Text {
+          visible: !(root.bar && root.bar.vertical)
+          text: root.focusLang ? root.focusLang.short : root.meta.bar
+          color: button.active && button.useActiveColor ? button.activeColor : button.foreground
+          font.family: button.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          font.bold: true
+          anchors.verticalCenter: parent.verticalCenter
+        }
       }
-      Text {
-        visible: !(root.bar && root.bar.vertical)
-        text: root.meta.bar
-        color: button.active && button.useActiveColor ? button.activeColor : button.foreground
-        font.family: button.fontFamily
-        font.pixelSize: Style.font.bodySmall
-        font.bold: true
-        anchors.verticalCenter: parent.verticalCenter
+
+      Rectangle {
+        visible: !!root.focusLang && !(root.bar && root.bar.vertical)
+        width: parent.width
+        height: 2
+        radius: 1
+        color: Style.selectedFillFor(button.foreground, Color.accent)
+        Rectangle {
+          width: parent.width * (root.focusScore / 100)
+          height: parent.height
+          radius: 1
+          color: Color.accent
+        }
       }
     }
   }
@@ -404,6 +492,87 @@ Panel {
               wrapMode: Text.WordWrap
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.bodySmall
+            }
+          }
+        }
+
+        // Language stack
+        Column {
+          width: parent.width
+          spacing: Style.space(8)
+
+          Text {
+            width: parent.width
+            text: root.focusLang ? ("Now · " + root.focusLang.name) : "Stack"
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            font.bold: true
+            opacity: 0.7
+          }
+
+          Text {
+            width: parent.width
+            visible: root.stack.length === 0
+            text: "Open a .py / .rs / .go file. In nvim, source nvim/omacapy.lua so the badge follows the buffer."
+            color: root.bar.foreground
+            opacity: 0.55
+            wrapMode: Text.WordWrap
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          Repeater {
+            model: root.stack
+            delegate: Column {
+              required property var modelData
+              width: parent.width
+              spacing: Style.space(3)
+
+              Row {
+                width: parent.width
+                spacing: Style.space(8)
+                Text {
+                  text: modelData.icon
+                  color: root.bar.foreground
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.body
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                  width: parent.width * 0.38
+                  text: modelData.name
+                  color: root.bar.foreground
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                  font.bold: modelData.active
+                  elide: Text.ElideRight
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                  width: parent.width * 0.46
+                  horizontalAlignment: Text.AlignRight
+                  text: modelData.weekText + " · " + Math.round(modelData.score) + "%"
+                  color: root.bar.foreground
+                  opacity: 0.7
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.bodySmall
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+              }
+
+              Rectangle {
+                width: parent.width
+                height: Style.space(6)
+                radius: height / 2
+                color: Style.selectedFillFor(root.bar.foreground, Color.accent)
+                Rectangle {
+                  width: parent.width * (modelData.score / 100)
+                  height: parent.height
+                  radius: parent.radius
+                  color: modelData.active ? Color.accent : Qt.darker(Color.accent, 1.25)
+                }
+              }
             }
           }
         }

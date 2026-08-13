@@ -11,7 +11,7 @@ function nowMs() {
 function defaultState(ts) {
   ts = ts || nowMs()
   return {
-    version: 1,
+    version: 2,
     happiness: 72,
     belly: 58,
     zen: 80,
@@ -21,9 +21,11 @@ function defaultState(ts) {
     soaks: 0,
     lastInteractMs: ts,
     lastTickMs: ts,
+    lastPracticeTickMs: ts,
     lastWisdom: "",
     toast: "",
     mood: "chill",
+    languages: {},
   }
 }
 
@@ -31,7 +33,7 @@ function normalizeState(raw, ts) {
   var base = defaultState(ts)
   if (!raw || typeof raw !== "object") return base
   return {
-    version: 1,
+    version: 2,
     happiness: clamp(raw.happiness != null ? raw.happiness : base.happiness, 0, 100),
     belly: clamp(raw.belly != null ? raw.belly : base.belly, 0, 100),
     zen: clamp(raw.zen != null ? raw.zen : base.zen, 0, 100),
@@ -41,9 +43,11 @@ function normalizeState(raw, ts) {
     soaks: Math.max(0, Number(raw.soaks) || 0),
     lastInteractMs: Number(raw.lastInteractMs) || ts || nowMs(),
     lastTickMs: Number(raw.lastTickMs) || ts || nowMs(),
+    lastPracticeTickMs: Number(raw.lastPracticeTickMs) || Number(raw.lastTickMs) || ts || nowMs(),
     lastWisdom: String(raw.lastWisdom || ""),
     toast: String(raw.toast || ""),
     mood: String(raw.mood || "chill"),
+    languages: normalizeLanguages(raw.languages),
   }
 }
 
@@ -60,7 +64,7 @@ function serializeState(state) {
   var s = normalizeState(state, nowMs())
   // don't persist ephemeral toast forever as sticky UI — keep last one ok
   return JSON.stringify({
-    version: 1,
+    version: 2,
     happiness: s.happiness,
     belly: s.belly,
     zen: s.zen,
@@ -70,8 +74,10 @@ function serializeState(state) {
     soaks: s.soaks,
     lastInteractMs: s.lastInteractMs,
     lastTickMs: s.lastTickMs,
+    lastPracticeTickMs: s.lastPracticeTickMs,
     lastWisdom: s.lastWisdom,
     mood: s.mood,
+    languages: s.languages,
   }, null, 2) + "\n"
 }
 
@@ -350,7 +356,12 @@ function barTempoMs(state) {
   return Math.round(520 * tempo)
 }
 
-function tooltip(state, load) {
+function tooltip(state, load, langId) {
+  var lang = langById(langId)
+  if (lang) {
+    var row = languageStat(state, lang.id)
+    return lang.name + " · " + formatDuration(row.weekMs) + " this week · click for stack"
+  }
   var m = moodMeta(state && state.mood)
   var loadText = isFinite(load) ? load.toFixed(2) : "?"
   return "OmaCapy · " + m.title + " · CPU " + loadText + " · click to open lounge"
@@ -390,6 +401,275 @@ function emptyWisdom() {
   return "Ask for Wisdom, or right-click the badge for a one-liner."
 }
 
+function pad2(n) {
+  n = Math.floor(Number(n) || 0)
+  return n < 10 ? "0" + n : String(n)
+}
+
+function dayKey(ts) {
+  var d = new Date(ts || nowMs())
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate())
+}
+
+function weekKey(ts) {
+  var d = new Date(ts || nowMs())
+  var day = d.getDay()
+  var mondayOffset = day === 0 ? -6 : 1 - day
+  var monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + mondayOffset)
+  return monday.getFullYear() + "-W" + pad2(monday.getMonth() + 1) + pad2(monday.getDate())
+}
+
+function emptyLangStat(ts) {
+  ts = ts || nowMs()
+  return {
+    ms: 0,
+    todayMs: 0,
+    weekMs: 0,
+    todayKey: dayKey(ts),
+    weekKey: weekKey(ts),
+    lastSeenMs: 0,
+  }
+}
+
+function normalizeLangStat(raw, ts) {
+  var base = emptyLangStat(ts)
+  if (!raw || typeof raw !== "object") return base
+  return {
+    ms: Math.max(0, Number(raw.ms) || 0),
+    todayMs: Math.max(0, Number(raw.todayMs) || 0),
+    weekMs: Math.max(0, Number(raw.weekMs) || 0),
+    todayKey: String(raw.todayKey || base.todayKey),
+    weekKey: String(raw.weekKey || base.weekKey),
+    lastSeenMs: Math.max(0, Number(raw.lastSeenMs) || 0),
+  }
+}
+
+function normalizeLanguages(raw) {
+  var out = {}
+  if (!raw || typeof raw !== "object") return out
+  var keys = Object.keys(raw)
+  for (var i = 0; i < keys.length; i++) {
+    var id = keys[i]
+    if (!langById(id) && id !== "other") continue
+    out[id] = normalizeLangStat(raw[id])
+  }
+  return out
+}
+
+function languageStat(state, id) {
+  state = state || {}
+  var langs = state.languages || {}
+  return normalizeLangStat(langs[id])
+}
+
+function L(id, name, shortName, icon, extensions, aliases) {
+  return {
+    id: id,
+    name: name,
+    short: shortName,
+    icon: icon,
+    extensions: extensions || [],
+    aliases: aliases || [],
+  }
+}
+
+// Nerd Font glyphs — same visual family as nvim-web-devicons.
+var LANGUAGES = [
+  L("python", "Python", "py", "\ue73c", ["py", "pyw", "pyi"], ["python", "pyproject.toml", "requirements.txt"]),
+  L("rust", "Rust", "rs", "\ue7a8", ["rs"], ["rust", "cargo.toml", "cargo.lock"]),
+  L("go", "Go", "go", "\ue724", ["go"], ["go.mod", "go.sum"]),
+  L("javascript", "JavaScript", "js", "\ue781", ["js", "mjs", "cjs"], ["javascript", "node", "package.json"]),
+  L("typescript", "TypeScript", "ts", "\ue628", ["ts", "mts", "cts"], ["typescript", "tsconfig.json"]),
+  L("tsx", "TSX", "tsx", "\ue7ba", ["tsx"], ["tsx"]),
+  L("jsx", "JSX", "jsx", "\ue7ba", ["jsx"], ["jsx"]),
+  L("lua", "Lua", "lua", "\ue620", ["lua"], ["lua"]),
+  L("ruby", "Ruby", "rb", "\ue739", ["rb", "erb"], ["ruby", "gemfile"]),
+  L("php", "PHP", "php", "\ue73d", ["php"], ["php", "composer.json"]),
+  L("java", "Java", "java", "\ue738", ["java"], ["java"]),
+  L("kotlin", "Kotlin", "kt", "\ue634", ["kt", "kts"], ["kotlin"]),
+  L("c", "C", "c", "\ue61e", ["c", "h"], ["c"]),
+  L("cpp", "C++", "c++", "\ue61d", ["cpp", "cc", "cxx", "hpp", "hh"], ["cpp", "c++", "cplusplus", "cmakelists.txt"]),
+  L("csharp", "C#", "c#", "\ue77f", ["cs"], ["cs", "csharp"]),
+  L("html", "HTML", "html", "\ue736", ["html", "htm"], ["html"]),
+  L("css", "CSS", "css", "\ue749", ["css", "scss", "sass", "less"], ["css", "scss"]),
+  L("json", "JSON", "json", "\ue60b", ["json", "jsonc"], ["json"]),
+  L("markdown", "Markdown", "md", "\ue73e", ["md", "mdx"], ["markdown"]),
+  L("shell", "Shell", "sh", "\ue795", ["sh", "bash", "zsh", "fish"], ["sh", "bash", "zsh", "fish"]),
+  L("qml", "QML", "qml", "\ue6ae", ["qml"], ["qml"]),
+  L("zig", "Zig", "zig", "\ue6a9", ["zig"], ["zig"]),
+  L("elixir", "Elixir", "ex", "\ue62d", ["ex", "exs"], ["elixir"]),
+  L("haskell", "Haskell", "hs", "\ue777", ["hs", "lhs"], ["haskell"]),
+  L("swift", "Swift", "swift", "\ue755", ["swift"], ["swift"]),
+  L("dart", "Dart", "dart", "\ue798", ["dart"], ["dart"]),
+  L("svelte", "Svelte", "svelte", "\ue697", ["svelte"], ["svelte"]),
+  L("vue", "Vue", "vue", "\ue6a0", ["vue"], ["vue"]),
+  L("sql", "SQL", "sql", "\ue706", ["sql"], ["sql"]),
+  L("toml", "TOML", "toml", "\ue6b2", ["toml"], ["toml"]),
+  L("yaml", "YAML", "yml", "\ue6a8", ["yml", "yaml"], ["yaml", "yml"]),
+  L("docker", "Docker", "docker", "\ue7b0", [], ["dockerfile", "containerfile"]),
+  L("make", "Make", "make", "\ue673", [], ["makefile", "gnumakefile"]),
+  L("vim", "Vim", "vim", "\ue7c5", ["vim"], ["vim", "viml"]),
+  L("nix", "Nix", "nix", "\uf313", ["nix"], ["nix"]),
+  L("astro", "Astro", "astro", "\ue6b3", ["astro"], ["astro"]),
+  L("terraform", "Terraform", "tf", "\ue69a", ["tf", "tfvars"], ["terraform"]),
+  L("graphql", "GraphQL", "gql", "\ue662", ["graphql", "gql"], ["graphql"]),
+  L("other", "Other", "dev", "\ue795", [], ["other", "text"]),
+]
+
+var LANG_BY_ID = {}
+var LANG_BY_EXT = {}
+var LANG_BY_ALIAS = {}
+;(function indexLangs() {
+  for (var i = 0; i < LANGUAGES.length; i++) {
+    var lang = LANGUAGES[i]
+    LANG_BY_ID[lang.id] = lang
+    var e
+    for (e = 0; e < lang.extensions.length; e++)
+      LANG_BY_EXT[lang.extensions[e].toLowerCase()] = lang
+    for (e = 0; e < lang.aliases.length; e++)
+      LANG_BY_ALIAS[lang.aliases[e].toLowerCase()] = lang
+  }
+})()
+
+function langById(id) {
+  if (!id) return null
+  return LANG_BY_ID[String(id)] || null
+}
+
+function lookupToken(token) {
+  if (!token) return null
+  var t = String(token).trim().toLowerCase()
+  if (!t) return null
+  if (LANG_BY_ID[t]) return LANG_BY_ID[t]
+  if (LANG_BY_ALIAS[t]) return LANG_BY_ALIAS[t]
+  if (LANG_BY_EXT[t]) return LANG_BY_EXT[t]
+  return null
+}
+
+function extractFilename(title) {
+  var t = String(title || "").trim()
+  if (!t) return ""
+  t = t.replace(/\s+[—–|\-].*$/, "")
+  t = t.replace(/\s+\(.*\)$/, "")
+  var parts = t.split(/[/\\]/)
+  return String(parts[parts.length - 1] || "").trim()
+}
+
+function detectLanguage(title, appId, hint) {
+  var fromHint = lookupToken(hint)
+  if (!fromHint && hint) {
+    var hintName = extractFilename(hint)
+    fromHint = lookupToken(hintName)
+    if (!fromHint && hintName.indexOf(".") !== -1)
+      fromHint = lookupToken(hintName.split(".").pop())
+  }
+  if (fromHint) return fromHint
+
+  var name = extractFilename(title)
+  var lower = name.toLowerCase()
+  if (LANG_BY_ALIAS[lower]) return LANG_BY_ALIAS[lower]
+
+  var ext = ""
+  var dot = lower.lastIndexOf(".")
+  if (dot > 0 && dot < lower.length - 1) ext = lower.slice(dot + 1)
+  if (ext && LANG_BY_EXT[ext]) return LANG_BY_EXT[ext]
+
+  var raw = String(title || "")
+  if (/\bDockerfile\b/i.test(raw) || /\bContainerfile\b/i.test(raw)) return LANG_BY_ID.docker
+  if (/\bMakefile\b/i.test(raw)) return LANG_BY_ID.make
+  if (/\bCargo\.toml\b/i.test(raw)) return LANG_BY_ID.rust
+
+  var app = String(appId || "").toLowerCase()
+  if (app.indexOf("jetbrains") !== -1 && ext) return lookupToken(ext)
+
+  return null
+}
+
+function rollLangWindows(stat, ts) {
+  stat = normalizeLangStat(stat, ts)
+  var today = dayKey(ts)
+  var week = weekKey(ts)
+  if (stat.todayKey !== today) {
+    stat.todayMs = 0
+    stat.todayKey = today
+  }
+  if (stat.weekKey !== week) {
+    stat.weekMs = 0
+    stat.weekKey = week
+  }
+  return stat
+}
+
+function tickPractice(state, langId, ts) {
+  ts = ts || nowMs()
+  state = normalizeState(state, ts)
+  var prev = state.lastPracticeTickMs || ts
+  var dt = ts - prev
+  state.lastPracticeTickMs = ts
+  if (!langId || !langById(langId)) return state
+  if (dt < 800) return state
+  if (dt > 20000) dt = 20000
+
+  var langs = state.languages || {}
+  var row = rollLangWindows(langs[langId], ts)
+  row.ms += dt
+  row.todayMs += dt
+  row.weekMs += dt
+  row.lastSeenMs = ts
+  langs[langId] = row
+  state.languages = langs
+  return state
+}
+
+function practiceScore(ms) {
+  var hours = Math.max(0, Number(ms) || 0) / 3600000
+  return clamp(100 * (1 - Math.exp(-hours / 8)), 0, 100)
+}
+
+function formatDuration(ms) {
+  var totalMin = Math.floor(Math.max(0, Number(ms) || 0) / 60000)
+  if (totalMin < 1) return (Number(ms) || 0) < 1000 ? "0m" : "<1m"
+  if (totalMin < 60) return totalMin + "m"
+  var h = Math.floor(totalMin / 60)
+  var m = totalMin % 60
+  if (h < 24) return m ? h + "h " + m + "m" : h + "h"
+  var d = Math.floor(h / 24)
+  var rh = h % 24
+  return rh ? d + "d " + rh + "h" : d + "d"
+}
+
+function stackRows(state, focusId) {
+  state = normalizeState(state)
+  var langs = state.languages || {}
+  var ids = Object.keys(langs)
+  if (focusId && langById(focusId) && !langs[focusId]) ids.push(focusId)
+  var rows = []
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i]
+    var meta = langById(id) || langById("other")
+    var stat = rollLangWindows(langs[id], nowMs())
+    rows.push({
+      id: id,
+      name: meta.name,
+      short: meta.short,
+      icon: meta.icon,
+      ms: stat.ms,
+      todayMs: stat.todayMs,
+      weekMs: stat.weekMs,
+      score: practiceScore(stat.ms),
+      active: id === focusId,
+      todayText: formatDuration(stat.todayMs),
+      weekText: formatDuration(stat.weekMs),
+      totalText: formatDuration(stat.ms),
+    })
+  }
+  rows.sort(function(a, b) {
+    if (a.active !== b.active) return a.active ? -1 : 1
+    return b.ms - a.ms
+  })
+  return rows.slice(0, 6)
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     clamp: clamp,
@@ -417,5 +697,16 @@ if (typeof module !== "undefined") {
     meterHint: meterHint,
     emptyWisdom: emptyWisdom,
     WISDOM: WISDOM,
+    LANGUAGES: LANGUAGES,
+    langById: langById,
+    detectLanguage: detectLanguage,
+    extractFilename: extractFilename,
+    tickPractice: tickPractice,
+    practiceScore: practiceScore,
+    formatDuration: formatDuration,
+    languageStat: languageStat,
+    stackRows: stackRows,
+    dayKey: dayKey,
+    weekKey: weekKey,
   }
 }
