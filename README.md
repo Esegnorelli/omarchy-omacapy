@@ -2,11 +2,11 @@
 
 ![OmaCapy](preview.png)
 
-**Computers can be fun.**
+**The playful roommate Omarchy didn't ship.**
 
-A capybara roommate for your [Omarchy](https://omarchy.org/) bar. It climbs out of the badge like an old office assistant: looks at the compile, offers a soak, believes in oranges.
+It sits on the [Omarchy](https://omarchy.org/) bar next to clock and weather — same shell, same theme, zero extra packages. Pet it. Feed it oranges. Soak it. Collect omakase one-liners. When the machine fries, the rodent looks fried too.
 
-Click the badge. Pet it. Feed it. Dunk it in an imaginary river. Collect unserious wisdom. When the machine fries, the rodent looks fried too.
+Computers can be useful **and** fun.
 
 ## What you do
 

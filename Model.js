@@ -195,26 +195,26 @@ function soak(state, load, ts) {
 }
 
 var WISDOM = [
+  "A beautiful system is a motivating system. Also oranges.",
+  "Omakase means sit down. The chef already tiled your windows.",
+  "Super+Alt+Space is the river. Everything else is dry land.",
+  "Theme first. Then the bug is at least pretty.",
+  "If the compile is loud, soak. If Super+Q closed the wrong thing, soak again.",
+  "Updates can wait. Zen cannot.",
+  "Hyprland tiles. You float.",
+  "The menu knows. You do not need another dashboard.",
   "If it is not a river problem, stand still like a capy.",
   "Deploy nothing before snacks.",
-  "Your code compiles emotionally already.",
-  "Meetings are just dry land. Endure.",
-  "Be the load average you want to see in the world.",
   "Orange first. Refactor second.",
-  "A watched pipeline never boils — but a soaked capy does not care.",
-  "Touch grass. Or at least touch this rodent.",
-  "Production is a suggestion. Zen is a lifestyle.",
-  "The bug fears the calm engineer.",
-  "SSH is temporary. Vibes are forever.",
   "You do not fix burnout with another monitor.",
-  "In Brazil we call this 'boa'. Elsewhere: LGTM.",
   "Capivara does not doomscroll. Capivara floats.",
   "If CI fails, soak again.",
   "Small pets, large serotonin.",
-  "Today's status: unbothered aquatic mammal.",
-  "Leave the tabs open. The river does not close tickets.",
-  "Your TODO list cannot swim faster than you.",
   "Quiet competence beats loud panic. Also oranges.",
+  "Neovim is a lifestyle. This rodent is a coworker.",
+  "A watched pipeline never boils — but a soaked capy does not care.",
+  "Leave the workspaces. The river does not close tickets.",
+  "Productivity is downstream from motivation. Pet the mammal.",
 ]
 
 function pick(list, salt) {
@@ -247,7 +247,7 @@ function moodMeta(mood) {
     chill: {
       face: "🦫",
       title: "chill",
-      blurb: "Your bar roommate is floating. Pet, feed, soak, or ask for wisdom.",
+      blurb: "Sits next to the clock. Pet, feed, soak, or ask for omakase wisdom.",
       bar: "Capy",
       frames: ["🦫", "🦫˳", "˳🦫", "🦫"],
       tempo: 1.0,
