@@ -2,9 +2,9 @@
 
 ![OmaCapy](preview.png)
 
-**The playful roommate Omarchy didn't ship.**
+A bar companion for [Omarchy](https://omarchy.org/) — same shell, same theme, nothing extra to install.
 
-It sits on the [Omarchy](https://omarchy.org/) bar next to clock and weather — same shell, same theme, nothing extra to install. Pet it. Feed it oranges. Soak it. Collect omakase one-liners. When the machine fries, the rodent looks fried too.
+Pet it. Feed it oranges. Soak it. Collect omakase one-liners. When the machine fries, the rodent looks fried too.
 
 Computers can be useful **and** fun.
 

@@ -18,23 +18,24 @@ Panel {
   property var capy: Model.defaultState(Date.now())
   property real loadAvg: 0
   property bool hydrateDone: false
-  property int frame: 0
   property int cursorIndex: 0
   property bool cursorActive: false
   property bool actionPop: false
   property real heroScale: 1
-  property real heroSpin: 0
-  property real barNudge: 0
   property real toastOpacity: 0
   property string toastText: ""
   property var particles: []
   property int particleSeq: 0
+  property real loungeOpacity: 0
+  property real loungeSlide: 8
 
   readonly property var meta: Model.moodMeta(capy.mood)
   readonly property var meters: Model.meters(capy)
-  readonly property int animTempo: Model.barTempoMs(capy)
   readonly property var actions: Model.actions()
   readonly property string rank: Model.bondRank(capy.bond)
+  readonly property color fg: bar ? bar.foreground : Color.foreground
+  readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+  readonly property color dim: Qt.darker(fg, 1.45)
   readonly property color moodColor: capy.mood === "fried"
     ? (bar ? bar.urgent : Color.urgent)
     : Color.accent
@@ -65,16 +66,23 @@ Panel {
       toastFade.restart()
   }
 
+  function burstColor(actionId) {
+    if (actionId === "pet") return "#E8C9A0"
+    if (actionId === "orange") return "#F08A24"
+    if (actionId === "soak") return "#7EC8E3"
+    return ""
+  }
+
   function spawnParticles(actionId) {
-    var fx = Model.actionFx(actionId)
+    var tint = burstColor(actionId)
     var next = []
-    for (var i = 0; i < fx.length; i++) {
+    for (var i = 0; i < 5; i++) {
       particleSeq += 1
       next.push({
         id: particleSeq,
-        text: fx[i],
-        x: 40 + (i * 70) + ((particleSeq + i) % 3) * 12,
-        delay: i * 70,
+        x: 28 + i * 22 + ((particleSeq + i) % 3) * 6,
+        delay: i * 45,
+        tint: tint,
       })
     }
     particles = next
@@ -83,11 +91,8 @@ Panel {
 
   function playActionMotion(actionId) {
     actionPop = true
-    heroScale = actionId === "soak" ? 1.18 : 1.28
-    heroSpin = actionId === "wisdom" ? 12 : (actionId === "orange" ? -8 : 0)
-    barNudge = actionId === "pet" ? -4 : 3
+    heroScale = actionId === "soak" ? 1.08 : 1.10
     popBack.restart()
-    nudgeBack.restart()
     spawnParticles(actionId)
   }
 
@@ -120,7 +125,11 @@ Panel {
       cursorActive = false
       cursorIndex = 0
       heroScale = 1
-      heroSpin = 0
+      loungeOpacity = 0
+      loungeSlide = 8
+      openAnim.restart()
+    } else {
+      loungeOpacity = 0
     }
   }
 
@@ -178,47 +187,19 @@ Panel {
   }
 
   Timer {
-    interval: Math.max(180, root.animTempo)
-    running: true
-    repeat: true
-    onTriggered: root.frame = (root.frame + 1) % 8
-  }
-
-  Timer {
-    interval: 40
-    running: true
-    repeat: true
-    onTriggered: {
-      if (nudgeBack.running) return
-      var t = Date.now() / (root.capy.mood === "napping" ? 900 : 420)
-      var amp = root.capy.mood === "hyped" ? 2.4 : (root.capy.mood === "fried" ? 1.8 : 1.2)
-      root.barNudge = Math.sin(t) * amp
-    }
-  }
-
-  Timer {
     id: popBack
     interval: 220
     running: false
     repeat: false
     onTriggered: {
       root.heroScale = 1
-      root.heroSpin = 0
       root.actionPop = false
     }
   }
 
   Timer {
-    id: nudgeBack
-    interval: 180
-    running: false
-    repeat: false
-    onTriggered: root.barNudge = 0
-  }
-
-  Timer {
     id: toastFade
-    interval: 2200
+    interval: 1800
     running: false
     repeat: false
     onTriggered: root.toastOpacity = 0
@@ -226,16 +207,22 @@ Panel {
 
   Timer {
     id: particleClear
-    interval: 900
+    interval: 780
     running: false
     repeat: false
     onTriggered: root.particles = []
   }
 
-  Behavior on heroScale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
-  Behavior on heroSpin { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-  Behavior on barNudge { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
-  Behavior on toastOpacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+  SequentialAnimation {
+    id: openAnim
+    ParallelAnimation {
+      NumberAnimation { target: root; property: "loungeOpacity"; to: 1; duration: 220; easing.type: Easing.OutCubic }
+      NumberAnimation { target: root; property: "loungeSlide"; to: 0; duration: 240; easing.type: Easing.OutCubic }
+    }
+  }
+
+  Behavior on heroScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+  Behavior on toastOpacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
   WidgetButton {
     id: button
@@ -249,8 +236,6 @@ Panel {
     fixedHeight: root.bar && root.bar.vertical ? Style.space(36) : -1
     horizontalMargin: 6
     tooltipText: Model.tooltip(root.capy, root.loadAvg)
-    opacity: 0.88 + Math.min(0.12, Math.abs(root.barNudge) * 0.03)
-    Behavior on opacity { NumberAnimation { duration: 80 } }
     onPressed: function(b) {
       if (b === Qt.MiddleButton) {
         root.doAction("pet")
@@ -275,7 +260,6 @@ Panel {
         mood: root.capy.mood
         popped: root.actionPop
         anchors.verticalCenter: parent.verticalCenter
-        y: root.barNudge * 0.4
       }
       Text {
         visible: !(root.bar && root.bar.vertical)
@@ -296,7 +280,7 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(400))
+    contentWidth: panel.fittedContentWidth(Style.space(360))
     contentHeight: panel.fittedContentHeight(column.implicitHeight)
 
     PanelKeyCatcher {
@@ -320,128 +304,119 @@ Panel {
         anchors.right: parent.right
         anchors.top: parent.top
         spacing: Style.space(14)
+        opacity: root.loungeOpacity
+        y: root.loungeSlide
 
         Item {
           width: parent.width
-          height: heroBlock.implicitHeight + Style.space(18)
+          height: Math.max(heroFace.height, heroCopy.height)
 
           Repeater {
             model: root.particles
-            delegate: Text {
+            delegate: Rectangle {
               required property var modelData
-              text: modelData.text
-              font.pixelSize: Style.font.title
+              width: 5
+              height: 5
+              radius: 2.5
+              color: modelData.tint !== "" ? modelData.tint : Color.accent
               opacity: 0
               x: modelData.x
-              y: 70
+              y: 36
 
               SequentialAnimation on opacity {
                 running: true
                 PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 0; to: 1; duration: 90 }
-                NumberAnimation { from: 1; to: 0; duration: 650; easing.type: Easing.InQuad }
+                NumberAnimation { from: 0; to: 0.9; duration: 80 }
+                NumberAnimation { from: 0.9; to: 0; duration: 520; easing.type: Easing.InQuad }
               }
               SequentialAnimation on y {
                 running: true
                 PauseAnimation { duration: modelData.delay }
-                NumberAnimation { from: 70; to: 4; duration: 780; easing.type: Easing.OutCubic }
+                NumberAnimation { from: 40; to: 4; duration: 620; easing.type: Easing.OutCubic }
               }
             }
           }
 
+          CapyFace {
+            id: heroFace
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            faceSize: Style.space(72)
+            mood: root.capy.mood
+            popped: root.actionPop
+            scale: root.heroScale
+            transformOrigin: Item.Center
+          }
+
           Column {
-            id: heroBlock
-            width: parent.width
-            spacing: Style.space(6)
-
-            CapyFace {
-              anchors.horizontalCenter: parent.horizontalCenter
-              faceSize: Style.space(108)
-              mood: root.capy.mood
-              popped: root.actionPop
-              scale: root.heroScale
-              rotation: root.heroSpin
-              transformOrigin: Item.Center
-              opacity: root.capy.mood === "napping" ? 0.82 : 1
-
-              SequentialAnimation on opacity {
-                running: root.opened && root.capy.mood === "napping"
-                loops: Animation.Infinite
-                NumberAnimation { from: 0.55; to: 1.0; duration: 1400; easing.type: Easing.InOutSine }
-                NumberAnimation { from: 1.0; to: 0.55; duration: 1400; easing.type: Easing.InOutSine }
-              }
-            }
+            id: heroCopy
+            anchors.left: heroFace.right
+            anchors.leftMargin: Style.space(14)
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Style.space(4)
 
             Text {
               width: parent.width
-              horizontalAlignment: Text.AlignHCenter
               text: "OmaCapy"
-              color: root.bar.foreground
-              font.family: root.bar.fontFamily
+              color: root.fg
+              font.family: root.fontFamily
               font.pixelSize: Style.font.title
               font.bold: true
             }
 
             Text {
               width: parent.width
-              horizontalAlignment: Text.AlignHCenter
-              text: root.meta.title + " · " + root.rank
+              text: root.meta.title.toUpperCase()
               color: root.moodColor
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.body
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
               font.bold: true
+              font.letterSpacing: 1.2
             }
 
             Text {
               width: parent.width
-              horizontalAlignment: Text.AlignHCenter
-              text: root.meta.blurb
-              color: root.bar.foreground
-              opacity: 0.75
-              wrapMode: Text.WordWrap
-              font.family: root.bar.fontFamily
+              text: root.rank + "  ·  CPU " + root.loadAvg.toFixed(2)
+              color: root.dim
+              font.family: root.fontFamily
               font.pixelSize: Style.font.bodySmall
             }
           }
         }
 
-        Column {
+        Row {
           width: parent.width
-          spacing: Style.space(8)
+          spacing: Style.space(18)
 
           Repeater {
             model: root.meters
             delegate: Column {
               required property var modelData
-              width: parent.width
-              spacing: Style.space(4)
+              width: (parent.width - Style.space(36)) / 3
+              spacing: Style.space(5)
 
-              Row {
-                width: parent.width
-                Text {
-                  width: parent.width * 0.42
-                  text: modelData.label
-                  color: root.bar.foreground
-                  opacity: 0.7
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.bodySmall
-                }
-                Text {
-                  width: parent.width * 0.58
-                  horizontalAlignment: Text.AlignRight
-                  text: Math.round(modelData.value) + "%"
-                  color: root.bar.foreground
-                  font.family: root.bar.fontFamily
-                  font.pixelSize: Style.font.bodySmall
-                  font.bold: true
-                }
+              Text {
+                text: modelData.label.toUpperCase()
+                color: root.dim
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                font.letterSpacing: 1
+              }
+
+              Text {
+                text: Math.round(modelData.value) + "%"
+                color: root.fg
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.title
+                font.bold: true
               }
 
               Rectangle {
                 width: parent.width
-                height: Style.space(8)
+                height: Style.space(4)
                 radius: height / 2
-                color: Style.selectedFillFor(root.bar.foreground, Color.accent)
+                color: Style.selectedFillFor(root.fg, Color.accent)
 
                 Rectangle {
                   width: parent.width * (modelData.value / 100)
@@ -455,157 +430,81 @@ Panel {
               }
             }
           }
+        }
 
-          Text {
-            width: parent.width
-            text: Model.meterHint()
-            color: root.bar.foreground
-            opacity: 0.48
-            wrapMode: Text.WordWrap
-            font.family: root.bar.fontFamily
-            font.pixelSize: Style.font.bodySmall
+        PanelSeparator { foreground: root.fg }
+
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+
+          PanelSectionHeader {
+            text: "ACTIONS"
+            foreground: root.fg
+            fontFamily: root.fontFamily
+          }
+
+          Repeater {
+            model: root.actions
+            delegate: Button {
+              required property var modelData
+              required property int index
+              width: parent.width
+              text: modelData.label
+              tooltipText: modelData.detail
+              leftAlign: true
+              foreground: root.fg
+              fontFamily: root.fontFamily
+              hasCursor: root.cursorActive && root.cursorIndex === index
+              onHovered: function(on) {
+                if (on) {
+                  root.cursorActive = true
+                  root.cursorIndex = index
+                }
+              }
+              onClicked: root.doAction(modelData.id)
+
+              Text {
+                anchors.right: parent.right
+                anchors.rightMargin: Style.space(12)
+                anchors.verticalCenter: parent.verticalCenter
+                text: modelData.detail
+                color: root.dim
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+              }
+            }
           }
         }
 
         Column {
           width: parent.width
           spacing: Style.space(6)
+          visible: root.toastText !== "" || root.capy.lastWisdom !== ""
 
-          Repeater {
-            model: root.actions
-            delegate: BorderSurface {
-              required property var modelData
-              required property int index
-              width: parent.width
-              implicitHeight: actionRow.implicitHeight + Style.space(14)
-              radius: Style.cornerRadius
-              color: {
-                if (root.cursorActive && root.cursorIndex === index)
-                  return Style.selectedFillFor(root.bar.foreground, Color.accent)
-                return actionMouse.containsMouse
-                  ? Style.hoverFillFor(root.bar.foreground, Color.accent)
-                  : "transparent"
-              }
-              borderSpec: (root.cursorActive && root.cursorIndex === index)
-                ? Border.controlSpec("focus", root.bar.foreground, Color.accent)
-                : Border.none()
-              scale: actionMouse.pressed ? 0.98 : 1
-              Behavior on scale { NumberAnimation { duration: 90 } }
-              Behavior on color { ColorAnimation { duration: 120 } }
+          PanelSeparator { foreground: root.fg }
 
-              Row {
-                id: actionRow
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: Style.space(12)
-                anchors.rightMargin: Style.space(12)
-                spacing: Style.space(12)
-
-                Text {
-                  text: modelData.icon
-                  font.pixelSize: Style.font.title
-                  anchors.verticalCenter: parent.verticalCenter
-                  scale: actionMouse.containsMouse ? 1.12 : 1
-                  Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutBack } }
-                }
-
-                Column {
-                  width: parent.width - 48
-                  spacing: Style.space(2)
-                  Text {
-                    text: modelData.label
-                    color: root.bar.foreground
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.body
-                    font.bold: true
-                  }
-                  Text {
-                    text: modelData.detail
-                    color: root.bar.foreground
-                    opacity: 0.65
-                    font.family: root.bar.fontFamily
-                    font.pixelSize: Style.font.bodySmall
-                  }
-                }
-              }
-
-              MouseArea {
-                id: actionMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onEntered: {
-                  root.cursorActive = true
-                  root.cursorIndex = index
-                }
-                onClicked: root.doAction(modelData.id)
-              }
-            }
+          Text {
+            width: parent.width
+            visible: root.toastText !== ""
+            opacity: root.toastOpacity
+            text: root.toastText
+            color: Color.accent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            font.letterSpacing: 0.8
           }
-        }
 
-        BorderSurface {
-          width: parent.width
-          implicitHeight: loreCol.implicitHeight + Style.space(18)
-          radius: Style.cornerRadius
-          color: Style.hoverFillFor(root.bar.foreground, Color.accent)
-          borderSpec: Border.none()
-
-          Column {
-            id: loreCol
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: Style.space(12)
-            anchors.rightMargin: Style.space(12)
-            spacing: Style.space(6)
-
-            Text {
-              width: parent.width
-              visible: root.toastText !== ""
-              opacity: root.toastOpacity
-              text: root.toastText
-              color: Color.accent
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.bodySmall
-              font.bold: true
-              wrapMode: Text.WordWrap
-            }
-
-            Text {
-              width: parent.width
-              text: root.capy.lastWisdom !== "" ? root.capy.lastWisdom : Model.emptyWisdom()
-              color: root.bar.foreground
-              opacity: 0.86
-              wrapMode: Text.WordWrap
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.bodySmall
-            }
-
-            Text {
-              width: parent.width
-              text: Model.shortcutHint()
-              color: root.bar.foreground
-              opacity: 0.5
-              wrapMode: Text.WordWrap
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.bodySmall
-            }
-
-            Text {
-              width: parent.width
-              text: "bond " + Math.floor(root.capy.bond)
-                    + " · pets " + root.capy.pets
-                    + " · oranges " + root.capy.oranges
-                    + " · soaks " + root.capy.soaks
-                    + " · CPU " + root.loadAvg.toFixed(2)
-              color: root.bar.foreground
-              opacity: 0.5
-              wrapMode: Text.WordWrap
-              font.family: root.bar.fontFamily
-              font.pixelSize: Style.font.bodySmall
-            }
+          Text {
+            width: parent.width
+            visible: root.capy.lastWisdom !== ""
+            text: root.capy.lastWisdom
+            color: root.fg
+            opacity: 0.82
+            wrapMode: Text.WordWrap
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
           }
         }
       }

@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Esegnorelli",
   "license": "MIT",
-  "description": "A chill capybara roommate for your Omarchy bar. Pet it, feed it oranges, dunk it in the river, and collect omakase wisdom while it vibes with your CPU load.",
+  "description": "A bar companion for Omarchy. Moods, snacks, and zen that follow your CPU load — same shell, same theme.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "OmaCapy",
-    "description": "Desktop capybara companion with moods, snacks, and zero productivity guilt.",
+    "description": "Bar companion with moods, snacks, and zen that follow CPU load.",
     "category": "Widgets",
     "allowMultiple": false,
     "defaultSection": "center"

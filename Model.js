@@ -354,10 +354,10 @@ function meters(state) {
 
 function actions() {
   return [
-    { id: "pet", label: "Pet", detail: "Happiness up. The official hello.", icon: "✋" },
-    { id: "orange", label: "Orange", detail: "Snacks up. Diplomatic citrus.", icon: "🍊" },
-    { id: "soak", label: "Soak", detail: "Zen up. Send it to the river.", icon: "💧" },
-    { id: "wisdom", label: "Wisdom", detail: "A one-liner. No refunds.", icon: "💬" },
+    { id: "pet", label: "Pet", detail: "The official hello", icon: "✋" },
+    { id: "orange", label: "Orange", detail: "Diplomatic citrus", icon: "🍊" },
+    { id: "soak", label: "Soak", detail: "Send it to the river", icon: "💧" },
+    { id: "wisdom", label: "Wisdom", detail: "A one-liner", icon: "💬" },
   ]
 }
 
