@@ -512,58 +512,51 @@ Panel {
 
         Column {
           width: parent.width
-          spacing: Style.space(8)
+          spacing: Style.space(6)
 
-          Row {
+          Button {
             width: parent.width
-            spacing: Style.space(8)
-
-            Button {
-              width: (parent.width - parent.spacing) / 2
-              text: "Pet"
-              tooltipText: "The official hello"
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 0
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
-              onClicked: root.doAction("pet")
-            }
-            Button {
-              width: (parent.width - parent.spacing) / 2
-              text: "Orange"
-              tooltipText: "Diplomatic citrus"
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 1
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
-              onClicked: root.doAction("orange")
-            }
+            text: "Pet"
+            tooltipText: "The official hello"
+            leftAlign: true
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            hasCursor: root.cursorActive && root.cursorIndex === 0
+            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 0 } }
+            onClicked: root.doAction("pet")
           }
-
-          Row {
+          Button {
             width: parent.width
-            spacing: Style.space(8)
-
-            Button {
-              width: (parent.width - parent.spacing) / 2
-              text: "Soak"
-              tooltipText: "Send it to the river"
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 2
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
-              onClicked: root.doAction("soak")
-            }
-            Button {
-              width: (parent.width - parent.spacing) / 2
-              text: "Wisdom"
-              tooltipText: "A one-liner"
-              foreground: root.fg
-              fontFamily: root.fontFamily
-              hasCursor: root.cursorActive && root.cursorIndex === 3
-              onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
-              onClicked: root.doAction("wisdom")
-            }
+            text: "Orange"
+            tooltipText: "Diplomatic citrus"
+            leftAlign: true
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            hasCursor: root.cursorActive && root.cursorIndex === 1
+            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 1 } }
+            onClicked: root.doAction("orange")
+          }
+          Button {
+            width: parent.width
+            text: "Soak"
+            tooltipText: "Send it to the river"
+            leftAlign: true
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            hasCursor: root.cursorActive && root.cursorIndex === 2
+            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 2 } }
+            onClicked: root.doAction("soak")
+          }
+          Button {
+            width: parent.width
+            text: "Wisdom"
+            tooltipText: "A one-liner"
+            leftAlign: true
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            hasCursor: root.cursorActive && root.cursorIndex === 3
+            onHovered: function(on) { if (on) { root.cursorActive = true; root.cursorIndex = 3 } }
+            onClicked: root.doAction("wisdom")
           }
         }
 

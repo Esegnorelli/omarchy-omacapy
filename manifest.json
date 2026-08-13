@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "author": "Esegnorelli",
   "license": "MIT",
   "description": "A bar companion for Omarchy. Moods, snacks, and zen that follow your CPU load — same shell, same theme.",
