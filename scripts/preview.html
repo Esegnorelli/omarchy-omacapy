@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OmaCapy preview</title>
+  <style>
+    @font-face { font-family: Noto; src: url("file:///usr/share/fonts/noto/NotoSans-Regular.ttf"); font-weight: 400; }
+    @font-face { font-family: Noto; src: url("file:///usr/share/fonts/noto/NotoSans-Medium.ttf"); font-weight: 500; }
+    @font-face { font-family: Noto; src: url("file:///usr/share/fonts/noto/NotoSans-Bold.ttf"); font-weight: 700; }
+    @font-face { font-family: Noto; src: url("file:///usr/share/fonts/noto/NotoSans-Black.ttf"); font-weight: 900; }
+    html, body { margin: 0; padding: 0; width: 1280px; height: 720px; overflow: hidden; }
+    body {
+      font-family: Noto, "Noto Sans", sans-serif;
+      color: #ece8df;
+      background:
+        radial-gradient(900px 520px at 50% 42%, #1b1610 0%, #0c0c10 58%, #070709 100%);
+    }
+    .stage { position: relative; width: 1280px; height: 720px; }
+
+    .bar {
+      position: absolute; left: 28px; right: 28px; top: 18px; height: 42px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px;
+      border: 1px solid #2a2722; border-radius: 14px;
+      background: #121214ee;
+      box-shadow: 0 10px 30px #0006;
+    }
+    .ws { display: flex; gap: 10px; color: #8b8680; font-size: 13px; font-weight: 500; letter-spacing: .02em; }
+    .ws b { color: #f3efe6; }
+    .clock { color: #cfc8bc; font-size: 13px; font-weight: 500; }
+    .right { display: flex; align-items: center; gap: 10px; color: #8b8680; font-size: 12px; }
+    .badge {
+      display: flex; align-items: center; gap: 7px;
+      height: 26px; padding: 0 9px 0 4px;
+      border-radius: 999px; border: 1px solid #c98422;
+      background: #2a1d0c;
+      color: #f6d27a; font-size: 12px; font-weight: 700;
+    }
+    .badge img { width: 20px; height: 20px; object-fit: contain; }
+
+    .lounge {
+      position: absolute; left: 190px; top: 78px; width: 900px; height: 612px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      border: 1px solid #353028; border-radius: 22px;
+      background: #141318f2;
+      box-shadow: 0 28px 80px #0008, 0 0 0 1px #0003;
+      overflow: hidden;
+    }
+    .hero {
+      padding: 36px 34px 28px 40px;
+      border-right: 1px solid #2a2722;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+    }
+    .hero img { width: 228px; height: 232px; object-fit: contain; filter: drop-shadow(0 18px 24px #0007); }
+    .bubble {
+      margin: 18px 0 0;
+      max-width: 340px;
+      padding: 14px 16px 13px;
+      border-radius: 14px;
+      background: #f4ead6;
+      color: #1a1610;
+      text-align: left;
+      box-shadow: 0 10px 24px #0005;
+    }
+    .bubble .kicker { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #b45312; }
+    .bubble .line { margin-top: 3px; font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+    .bubble .sub { margin-top: 3px; font-size: 13px; font-weight: 500; color: #4a4338; }
+
+    .panel { padding: 28px 28px 24px 26px; display: flex; flex-direction: column; gap: 14px; }
+    .title { font-size: 28px; font-weight: 900; letter-spacing: -.03em; }
+    .mood { color: #e39b2b; font-size: 13px; font-weight: 700; margin-top: 2px; }
+    .blurb { color: #b7b0a5; font-size: 13px; line-height: 1.4; font-weight: 400; }
+
+    .meters { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+    .meter { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: center; }
+    .meter span { font-size: 12px; color: #b7b0a5; }
+    .meter b { font-size: 12px; color: #f3efe6; }
+    .track { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: #2a2724; overflow: hidden; }
+    .fill { height: 100%; border-radius: 99px; background: #e39b2b; }
+
+    .actions { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+    .act {
+      display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center;
+      min-height: 48px; padding: 8px 12px; border-radius: 10px;
+    }
+    .act.sel { background: #2a2218; }
+    .ico { width: 22px; height: 22px; border-radius: 99px; display: grid; place-items: center; }
+    .ico.pet { background: #3a2a18; }
+    .ico.ora { background: #3a2810; }
+    .ico.soa { background: #17303a; }
+    .ico.wis { background: #2a2a18; }
+    .dot { width: 8px; height: 8px; border-radius: 99px; }
+    .pet .dot { background: #d9b38c; }
+    .ora .dot { background: #f08a24; }
+    .soa .dot { background: #7ec8e3; }
+    .wis .dot { background: #f6d27a; }
+    .act strong { display: block; font-size: 14px; }
+    .act em { display: block; font-size: 12px; font-style: normal; color: #9c958a; }
+
+    .foot { margin-top: auto; color: #7d776e; font-size: 11px; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bar">
+      <div class="ws"><b>1</b><span>2</span><span>3</span><span>4</span><span>5</span></div>
+      <div class="clock">Thu 10:18</div>
+      <div class="right">
+        <span>wifi</span><span>vol</span>
+        <div class="badge"><img src="../capy.png" alt="">chill</div>
+        <span>pwr</span>
+      </div>
+    </div>
+    <section class="lounge">
+      <div class="hero">
+        <img src="../capy.png" alt="OmaCapy">
+        <div class="bubble">
+          <div class="kicker">IT CLIMBED OUT OF THE BAR</div>
+          <div class="line">Looks like you're compiling.</div>
+          <div class="sub">Want a soak? Or just an orange.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div>
+          <div class="title">OmaCapy</div>
+          <div class="mood">chill</div>
+          <div class="blurb">Your bar roommate. Pet, snack, soak, or ask for omakase wisdom.</div>
+        </div>
+        <div class="meters">
+          <div class="meter"><span>Happiness</span><b>72%</b><div class="track"><div class="fill" style="width:72%"></div></div></div>
+          <div class="meter"><span>Snacks</span><b>58%</b><div class="track"><div class="fill" style="width:58%"></div></div></div>
+          <div class="meter"><span>Zen</span><b>80%</b><div class="track"><div class="fill" style="width:80%"></div></div></div>
+        </div>
+        <div class="actions">
+          <div class="act sel"><div class="ico pet"><div class="dot"></div></div><div><strong>Pet</strong><em>Happiness up. The official hello.</em></div></div>
+          <div class="act"><div class="ico ora"><div class="dot"></div></div><div><strong>Orange</strong><em>Snacks up. Diplomatic citrus.</em></div></div>
+          <div class="act"><div class="ico soa"><div class="dot"></div></div><div><strong>Soak</strong><em>Zen up. Send it to the river.</em></div></div>
+          <div class="act"><div class="ico wis"><div class="dot"></div></div><div><strong>Wisdom</strong><em>A one-liner. No refunds.</em></div></div>
+        </div>
+        <div class="foot">It fries when your CPU does. Night restores zen. Nothing leaves the machine.</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
