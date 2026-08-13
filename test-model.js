@@ -111,7 +111,7 @@ assert("side default", M.normalizeSide("") === "center" && M.normalizeSide("nope
 assert("side left", M.normalizeSide("Left") === "left")
 assert("three sides", M.sideOptions().length === 3 && M.sideOptions()[1].value === "center")
 assert("bar word", M.moodMeta("chill").bar === "Capy")
-assert("tooltip", M.tooltip(idle, 1.5).indexOf("OmaCapy") === 0)
+assert("tooltip", M.tooltip(idle, 1.5).indexOf("CapyOmarchy") === 0)
 
 assert("action count pets", M.actionCount(p, "pet") === 1 && M.actionCount(p, "orange") === 0)
 assert("button label with count", M.actionButtonLabel(p, M.actions()[0]) === "Pet  ·  1")

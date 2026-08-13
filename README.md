@@ -1,6 +1,6 @@
-# OmaCapy
+# CapyOmarchy
 
-![OmaCapy](preview.png)
+![CapyOmarchy](preview.png)
 
 A bar companion for [Omarchy](https://omarchy.org/) — same shell, same theme, nothing extra to install.
 
@@ -84,7 +84,7 @@ omarchy plugin remove esegnorelli.omacapy --yes
 ## Why
 
 The plugin marketplace is full of VPNs, AI token meters, and printer queues.
-OmaCapy exists so your status bar can also host a wet friend who believes in snacks.
+CapyOmarchy exists so your status bar can also host a wet friend who believes in snacks.
 
 ## License
 
