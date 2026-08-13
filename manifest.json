@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
   "name": "OmaCapy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Esegnorelli",
   "license": "MIT",
-  "description": "A chill animated capybara roommate for your Omarchy bar. Pet it, feed it oranges, dunk it in water, and collect absurdly calm wisdom while it vibes with your CPU load.",
+  "description": "A living capybara on your Omarchy bar. Click the lounge to pet, feed oranges, soak, or ask for wisdom. Moods follow CPU load. No accounts, no network.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "OmaCapy",
-    "description": "Desktop capybara companion with moods, snacks, and zero productivity guilt.",
+    "description": "Click the capybara. Pet, snack, soak, wisdom. It fries when your CPU does.",
     "category": "Widgets",
     "allowMultiple": false,
     "defaultSection": "center"

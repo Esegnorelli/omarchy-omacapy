@@ -1,25 +1,47 @@
 # OmaCapy
 
-A chill **capybara roommate** for your [Omarchy](https://omarchy.org/) bar.
+![OmaCapy lounge](preview.png)
 
-Pet it. Feed it oranges. Dunk it in imaginary water. Collect unserious wisdom.
-It watches your load average so when the machine fries, the rodent looks fried too.
+A **capybara roommate** for your [Omarchy](https://omarchy.org/) bar.
+
+Click the badge to open the lounge. Pet it. Feed it oranges. Dunk it in an imaginary river. Collect unserious wisdom. When your machine fries, the rodent looks fried too.
 
 Because computers should be useful **and** a little ridiculous.
 
-## Features
+## What you do
 
-- **Animated** bar badge: mood frame cycle + soft pulse (faster when hyped/fried, slower when napping)
-- Lounge panel with bounce/spin on actions and floating emoji particles
-- Moods: `chill`, `soaked`, `munching`, `napping`, `hyped`, `fried`, `lonely`, `meh`
-- Actions: **Pet**, **Orange**, **Soak**, **Wisdom**
-- Slow natural decay + night nap regen + CPU-stress vibes from `/proc/loadavg`
-- State saved under `~/.local/state/omarchy/omacapy.json`
-- Shortcuts on the badge:
-  - **Left-click** — open lounge
-  - **Middle-click** — quick pet
-  - **Right-click** — quick wisdom
-  - **Scroll up/down** — pet / orange
+| Button | What happens |
+| --- | --- |
+| **Pet** | Happiness up. The official hello. |
+| **Orange** | Snacks up. Diplomatic citrus. |
+| **Soak** | Zen up. Send it to the river. |
+| **Wisdom** | A one-liner. No refunds. |
+
+Happiness, snacks, and zen fade slowly on their own. Night restores zen. High CPU load (from `/proc/loadavg`) cooks it until you soak.
+
+## Moods
+
+The badge word and the face change with the roommate:
+
+| Mood | Means |
+| --- | --- |
+| `chill` | Default floating coworker |
+| `soaked` | Just back from the river |
+| `munching` | Currently orange |
+| `napping` | After 23:00, if it's happy enough |
+| `hyped` | Over-petted |
+| `fried` | Load is high, or zen collapsed |
+| `lonely` | Nobody visited for hours |
+| `meh` | Happiness ran low |
+
+## Badge shortcuts
+
+- **Left-click** — open / close the lounge
+- **Middle-click** — quick pet
+- **Right-click** — quick wisdom
+- **Scroll up / down** — pet / orange
+
+State lives in `~/.local/state/omarchy/omacapy.json`. Nothing leaves the machine.
 
 ## Install
 
@@ -51,7 +73,7 @@ omarchy plugin remove esegnorelli.omacapy --yes
 ## Requirements
 
 - Omarchy Quattro shell
-- Nothing else. No accounts, no network, no packages beyond the desktop you already have.
+- Nothing else. No accounts, no network, no extra packages.
 
 ## Why
 

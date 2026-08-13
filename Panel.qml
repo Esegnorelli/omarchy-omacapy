@@ -33,12 +33,7 @@ Panel {
   readonly property var meta: Model.moodMeta(capy.mood)
   readonly property var meters: Model.meters(capy)
   readonly property int animTempo: Model.barTempoMs(capy)
-  readonly property var actions: [
-    { id: "pet", label: "Pet", detail: "soft diplomacy", icon: "✋" },
-    { id: "orange", label: "Orange", detail: "citrus treaty", icon: "🍊" },
-    { id: "soak", label: "Soak", detail: "river mode", icon: "💧" },
-    { id: "wisdom", label: "Wisdom", detail: "calm nonsense", icon: "💬" },
-  ]
+  readonly property var actions: Model.actions()
 
   function persist() {
     if (!hydrateDone) return
@@ -246,14 +241,14 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: Model.barLabel(root.capy, root.frame)
+    text: root.meta.bar
+    labelVisible: false
     active: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.capy.mood === "hyped" || root.actionPop
     useActiveColor: root.capy.mood === "lonely" || root.capy.mood === "fried" || root.actionPop
-    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(36)
-    fixedHeight: root.bar && root.bar.vertical ? Style.space(30) : -1
+    fixedWidth: root.bar && root.bar.vertical ? -1 : Style.space(58)
+    fixedHeight: root.bar && root.bar.vertical ? Style.space(36) : -1
     horizontalMargin: 6
     tooltipText: Model.tooltip(root.capy, root.loadAvg)
-    // subtle opacity pulse tied to bob clock
     opacity: 0.88 + Math.min(0.12, Math.abs(root.barNudge) * 0.03)
     Behavior on opacity { NumberAnimation { duration: 80 } }
     onPressed: function(b) {
@@ -270,6 +265,27 @@ Panel {
     onWheelMoved: function(delta) {
       if (delta > 0) root.doAction("pet")
       else root.doAction("orange")
+    }
+
+    Row {
+      anchors.centerIn: parent
+      spacing: Style.space(5)
+      CapyFace {
+        faceSize: Style.space(16)
+        mood: root.capy.mood
+        popped: root.actionPop
+        anchors.verticalCenter: parent.verticalCenter
+        y: root.barNudge * 0.4
+      }
+      Text {
+        visible: !(root.bar && root.bar.vertical)
+        text: root.meta.bar
+        color: button.active && button.useActiveColor ? button.activeColor : button.foreground
+        font.family: button.fontFamily
+        font.pixelSize: Style.font.bodySmall
+        font.bold: true
+        anchors.verticalCenter: parent.verticalCenter
+      }
     }
   }
 
@@ -340,12 +356,12 @@ Panel {
             width: parent.width
             spacing: Style.space(6)
 
-            Text {
+            CapyFace {
               id: heroFace
-              width: parent.width
-              horizontalAlignment: Text.AlignHCenter
-              text: Model.heroFace(root.capy, root.frame, root.actionPop)
-              font.pixelSize: Style.font.title * 2.35
+              anchors.horizontalCenter: parent.horizontalCenter
+              faceSize: Style.space(96)
+              mood: root.capy.mood
+              popped: root.actionPop
               scale: root.heroScale
               rotation: root.heroSpin
               transformOrigin: Item.Center
@@ -442,6 +458,16 @@ Panel {
                 }
               }
             }
+          }
+
+          Text {
+            width: parent.width
+            text: Model.meterHint()
+            color: root.bar.foreground
+            opacity: 0.48
+            wrapMode: Text.WordWrap
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
           }
         }
 
@@ -555,11 +581,19 @@ Panel {
 
             Text {
               width: parent.width
-              text: root.capy.lastWisdom !== ""
-                ? root.capy.lastWisdom
-                : "Right-click badge = wisdom · middle-click = pet · scroll = pet/orange"
+              text: root.capy.lastWisdom !== "" ? root.capy.lastWisdom : Model.emptyWisdom()
               color: root.bar.foreground
               opacity: 0.86
+              wrapMode: Text.WordWrap
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+
+            Text {
+              width: parent.width
+              text: Model.shortcutHint()
+              color: root.bar.foreground
+              opacity: 0.5
               wrapMode: Text.WordWrap
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.bodySmall
@@ -571,7 +605,7 @@ Panel {
                     + " · pets " + root.capy.pets
                     + " · oranges " + root.capy.oranges
                     + " · soaks " + root.capy.soaks
-                    + " · load " + root.loadAvg.toFixed(2)
+                    + " · CPU " + root.loadAvg.toFixed(2)
               color: root.bar.foreground
               opacity: 0.5
               wrapMode: Text.WordWrap

@@ -247,64 +247,64 @@ function moodMeta(mood) {
     chill: {
       face: "🦫",
       title: "chill",
-      blurb: "Floating through the desktop like it pays rent in vibes.",
-      bar: "🦫",
+      blurb: "Your bar roommate is floating. Pet, feed, soak, or ask for wisdom.",
+      bar: "Capy",
       frames: ["🦫", "🦫˳", "˳🦫", "🦫"],
       tempo: 1.0,
     },
     soaked: {
       face: "🫧🦫",
       title: "soaked",
-      blurb: "Fresh from the spa. Problems bounce off wet fur.",
-      bar: "🫧🦫",
+      blurb: "Just back from the river. Peak calm — soak again anytime.",
+      bar: "wet",
       frames: ["🫧🦫", "🦫🫧", "💧🦫", "🫧🦫"],
       tempo: 0.85,
     },
     munching: {
       face: "🍊🦫",
       title: "munching",
-      blurb: "Orange protocol engaged. Do not disturb the crunch.",
-      bar: "🍊",
+      blurb: "Orange protocol engaged. Feed another, or just watch the crunch.",
+      bar: "yum",
       frames: ["🍊", "🦫", "🍊🦫", "🦫"],
       tempo: 0.7,
     },
     napping: {
       face: "😴🦫",
       title: "napping",
-      blurb: "After-hours mode. Dreaming of warmer APIs.",
-      bar: "😴",
+      blurb: "Night mode. Let it sleep — or pet anyway.",
+      bar: "zzz",
       frames: ["😴", "💤", "😴🦫", "💤"],
       tempo: 1.6,
     },
     hyped: {
       face: "✨🦫",
       title: "hyped",
-      blurb: "Over-petted into enlightenment. Peak coworker.",
-      bar: "✨🦫",
+      blurb: "Over-petted into enlightenment. You are a good roommate.",
+      bar: "hype",
       frames: ["✨🦫", "🎉🦫", "🦫✨", "⚡🦫"],
       tempo: 0.45,
     },
     fried: {
       face: "🥵🦫",
       title: "fried",
-      blurb: "CPU heat detected. This capy needs a river and a nap.",
-      bar: "🥵",
+      blurb: "CPU is hot. Click Soak — this capy needs a river.",
+      bar: "hot",
       frames: ["🥵", "🔥", "🥵🦫", "💨"],
       tempo: 0.55,
     },
     lonely: {
       face: "🥺🦫",
       title: "lonely",
-      blurb: "Has been emotionally buffering. Pets preferred.",
-      bar: "🥺",
+      blurb: "Nobody has visited in hours. Click Pet.",
+      bar: "hey",
       frames: ["🥺", "🦫", "🥺🦫", "…🦫"],
       tempo: 1.25,
     },
     meh: {
       face: "😑🦫",
       title: "meh",
-      blurb: "Not mad. Just horizontally unimpressed.",
-      bar: "🦫",
+      blurb: "Horizontally unimpressed. A pet or an orange will do.",
+      bar: "meh",
       frames: ["😑", "🦫", "😑🦫", "🦫"],
       tempo: 1.35,
     },
@@ -353,7 +353,7 @@ function barTempoMs(state) {
 function tooltip(state, load) {
   var m = moodMeta(state && state.mood)
   var loadText = isFinite(load) ? load.toFixed(2) : "?"
-  return "OmaCapy · " + m.title + " · load " + loadText + " · click for lounge"
+  return "OmaCapy · " + m.title + " · CPU " + loadText + " · click to open lounge"
 }
 
 function meter(label, value) {
@@ -363,10 +363,31 @@ function meter(label, value) {
 function meters(state) {
   state = normalizeState(state)
   return [
-    meter("mood fuel", state.happiness),
-    meter("snack", state.belly),
-    meter("zen", state.zen),
+    meter("Happiness", state.happiness),
+    meter("Snacks", state.belly),
+    meter("Zen", state.zen),
   ]
+}
+
+function actions() {
+  return [
+    { id: "pet", label: "Pet", detail: "Happiness up. The official hello.", icon: "✋" },
+    { id: "orange", label: "Orange", detail: "Snacks up. Diplomatic citrus.", icon: "🍊" },
+    { id: "soak", label: "Soak", detail: "Zen up. Send it to the river.", icon: "💧" },
+    { id: "wisdom", label: "Wisdom", detail: "A one-liner. No refunds.", icon: "💬" },
+  ]
+}
+
+function shortcutHint() {
+  return "Badge: click lounge · mid-click pet · right-click wisdom · scroll pet / orange"
+}
+
+function meterHint() {
+  return "They fade slowly. Night restores zen. High CPU load fries it."
+}
+
+function emptyWisdom() {
+  return "Ask for Wisdom, or right-click the badge for a one-liner."
 }
 
 if (typeof module !== "undefined") {
@@ -391,6 +412,10 @@ if (typeof module !== "undefined") {
     barTempoMs: barTempoMs,
     tooltip: tooltip,
     meters: meters,
+    actions: actions,
+    shortcutHint: shortcutHint,
+    meterHint: meterHint,
+    emptyWisdom: emptyWisdom,
     WISDOM: WISDOM,
   }
 }
