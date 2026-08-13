@@ -352,7 +352,7 @@ function bondRank(bond) {
 function tooltip(state, load) {
   var m = moodMeta(state && state.mood)
   var loadText = isFinite(load) ? load.toFixed(2) : "?"
-  return "CapyOmarchy · " + m.title + " · CPU " + loadText + " · click for lounge"
+  return "OmaCapy · " + m.title + " · CPU " + loadText + " · click for lounge"
 }
 
 function meter(label, value) {

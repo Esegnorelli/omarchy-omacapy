@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "esegnorelli.omacapy",
-  "name": "CapyOmarchy",
-  "version": "2.5.0",
+  "name": "OmaCapy",
+  "version": "2.5.1",
   "author": "Esegnorelli",
   "license": "MIT",
   "description": "A bar companion for Omarchy. Moods, snacks, and zen that follow your CPU load — same shell, same theme.",
@@ -13,7 +13,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "CapyOmarchy",
+    "displayName": "OmaCapy",
     "description": "Bar companion with moods, snacks, and zen that follow CPU load.",
     "category": "Widgets",
     "allowMultiple": false,

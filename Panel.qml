@@ -468,7 +468,7 @@ Panel {
                 spacing: Style.space(8)
 
                 Text {
-                  text: "CapyOmarchy"
+                  text: "OmaCapy"
                   color: root.fg
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.title
